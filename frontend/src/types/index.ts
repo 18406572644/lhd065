@@ -200,3 +200,42 @@ export interface MealPlanRecommendResponse {
   recommendations: MealPlan[];
   message: string;
 }
+
+export interface RecipeImportError {
+  row: number;
+  field: string;
+  message: string;
+  value?: string;
+}
+
+export interface RecipeImportResult {
+  success: number;
+  failed: number;
+  duplicates: number;
+  total: number;
+  errors: RecipeImportError[];
+  imported_ids: number[];
+}
+
+export interface ImportPreviewResponse {
+  total_rows: number;
+  sample_data: Record<string, any>[];
+  columns: string[];
+  validation_errors: RecipeImportError[];
+}
+
+export interface URLImportRequest {
+  url: string;
+}
+
+export interface URLImportResponse {
+  success: boolean;
+  message: string;
+  recipe?: Recipe;
+  source: string;
+}
+
+export interface ExportRequest {
+  recipe_ids?: number[];
+  format: 'xlsx' | 'csv';
+}

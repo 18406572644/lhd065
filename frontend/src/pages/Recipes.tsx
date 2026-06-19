@@ -13,6 +13,7 @@ import {
   Space,
   message,
   Popconfirm,
+  Dropdown,
 } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -24,12 +25,16 @@ import {
   EditOutlined,
   HeartOutlined,
   HeartFilled,
+  ImportOutlined,
+  ExportOutlined,
+  DownOutlined,
 } from '@ant-design/icons';
 import { Recipe, RecipeForm, RecipeIngredient, RecipeStep } from '@/types';
 import { getRecipes, createRecipe, updateRecipe, deleteRecipe, toggleFavorite } from '@/api/recipes';
 import { formatDuration, getCategoryIcon, getDifficultyText, getDifficultyColor } from '@/utils';
 import ImageUploader from '@/components/ImageUploader';
 import ImageCarousel from '@/components/ImageCarousel';
+import RecipeImportExport from '@/components/RecipeImportExport';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -48,6 +53,7 @@ const Recipes: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form] = Form.useForm<RecipeForm>();
+  const [importExportOpen, setImportExportOpen] = useState(false);
 
   const loadRecipes = async () => {
     setLoading(true);
@@ -135,13 +141,37 @@ const Recipes: React.FC = () => {
     }
   };
 
+  const importExportMenuItems = [
+    {
+      key: 'import',
+      icon: <ImportOutlined />,
+      label: '批量导入',
+      onClick: () => setImportExportOpen(true),
+    },
+    {
+      key: 'export',
+      icon: <ExportOutlined />,
+      label: '导出食谱',
+      onClick: () => {
+        setImportExportOpen(true);
+      },
+    },
+  ];
+
   return (
     <div className="page-container animate-fadeIn">
       <div className="page-header">
         <h1 className="page-title">📖 食谱库</h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-          创建食谱
-        </Button>
+        <Space>
+          <Dropdown menu={{ items: importExportMenuItems }}>
+            <Button icon={<DownOutlined />}>
+              <ImportOutlined /> 导入 / 导出
+            </Button>
+          </Dropdown>
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+            创建食谱
+          </Button>
+        </Space>
       </div>
 
       <div className="filter-bar">
@@ -539,6 +569,12 @@ const Recipes: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      <RecipeImportExport
+        open={importExportOpen}
+        onClose={() => setImportExportOpen(false)}
+        onSuccess={() => loadRecipes()}
+      />
     </div>
   );
 };

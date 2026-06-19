@@ -10,3 +10,8 @@ bcrypt<5.0.0
 python-jose[cryptography]
 httpx
 email-validator
+pandas
+openpyxl
+beautifulsoup4
+lxml
+requests

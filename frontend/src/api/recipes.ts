@@ -1,5 +1,5 @@
 import request from '@/utils/request';
-import { Recipe, RecipeForm } from '@/types';
+import { Recipe, RecipeForm, ImportPreviewResponse, RecipeImportResult, URLImportRequest, URLImportResponse, ExportRequest } from '@/types';
 
 const DIFFICULTY_MAP: Record<string, string> = {
   '简单': 'easy',
@@ -203,3 +203,58 @@ export const mockGetRecipe = getRecipe;
 export const mockGetFavorites = getFavorites;
 export const mockGetRecommendedRecipes = getRecommendedRecipes;
 export const mockRecipes: Recipe[] = [];
+
+export const previewImport = async (file: File): Promise<ImportPreviewResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return request.post('/recipes/preview', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+
+export const importRecipes = async (file: File, skipDuplicates: boolean = true): Promise<RecipeImportResult> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('skip_duplicates', String(skipDuplicates));
+  return request.post('/recipes/import', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+};
+
+export const importFromURL = async (data: URLImportRequest): Promise<URLImportResponse> => {
+  return request.post('/recipes/import/url', data);
+};
+
+export const exportRecipes = async (data: ExportRequest): Promise<void> => {
+  const response = await request.post('/recipes/export', data, {
+    responseType: 'blob',
+  });
+  const url = window.URL.createObjectURL(new Blob([response]));
+  const link = document.createElement('a');
+  link.href = url;
+  const ext = data.format === 'csv' ? 'csv' : 'xlsx';
+  link.setAttribute('download', `recipes_${Date.now()}.${ext}`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+};
+
+export const downloadTemplate = async (format: 'xlsx' | 'csv' = 'xlsx'): Promise<void> => {
+  const response = await request.get('/recipes/export/template', {
+    params: { format },
+    responseType: 'blob',
+  });
+  const url = window.URL.createObjectURL(new Blob([response]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `recipe_import_template.${format}`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(url);
+};

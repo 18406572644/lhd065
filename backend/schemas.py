@@ -421,3 +421,56 @@ class MealPlanRecommendRequest(BaseModel):
 class MealPlanRecommendResponse(BaseModel):
     recommendations: List[MealPlanResponse]
     message: str
+
+
+class RecipeImportItem(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = ""
+    category: str = ""
+    prep_time: int = 0
+    cook_time: int = 0
+    servings: int = 1
+    difficulty: str = "简单"
+    image: str = ""
+    ingredients: List[dict] = []
+    steps: List[dict] = []
+    is_public: bool = False
+
+
+class RecipeImportError(BaseModel):
+    row: int
+    field: str
+    message: str
+    value: Optional[str] = None
+
+
+class RecipeImportResult(BaseModel):
+    success: int
+    failed: int
+    duplicates: int
+    total: int
+    errors: List[RecipeImportError] = []
+    imported_ids: List[int] = []
+
+
+class URLImportRequest(BaseModel):
+    url: str = Field(..., min_length=1)
+
+
+class URLImportResponse(BaseModel):
+    success: bool
+    message: str
+    recipe: Optional[RecipeResponse] = None
+    source: str = ""
+
+
+class ExportRequest(BaseModel):
+    recipe_ids: Optional[List[int]] = None
+    format: str = Field(default="xlsx", pattern="^(xlsx|csv)$")
+
+
+class ImportPreviewResponse(BaseModel):
+    total_rows: int
+    sample_data: List[dict]
+    columns: List[str]
+    validation_errors: List[RecipeImportError] = []
