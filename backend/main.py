@@ -20,6 +20,7 @@ from routers import upload as upload_router
 from routers import family as family_router
 from routers import meal_plans as meal_plans_router
 from routers import recipe_import_export as import_export_router
+from routers import cooking as cooking_router
 
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
@@ -258,6 +259,7 @@ app.include_router(upload_router.router, prefix="/api/upload", tags=["上传"])
 app.include_router(family_router.router, prefix="/api/family", tags=["家庭"])
 app.include_router(meal_plans_router.router, prefix="/api/meal-plans", tags=["用餐计划"])
 app.include_router(import_export_router.router, prefix="/api/recipes", tags=["食谱导入导出"])
+app.include_router(cooking_router.router, prefix="/api/cooking-records", tags=["烹饪记录"])
 
 
 @app.get("/")

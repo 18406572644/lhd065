@@ -469,6 +469,49 @@ class ExportRequest(BaseModel):
     format: str = Field(default="xlsx", pattern="^(xlsx|csv)$")
 
 
+class CookingRecordCreate(BaseModel):
+    recipe_id: int
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+    estimated_minutes: int = 0
+    actual_minutes: int = 0
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    review: str = ""
+    step_records: str = ""
+
+
+class CookingRecordUpdate(BaseModel):
+    completed_at: Optional[datetime] = None
+    actual_minutes: Optional[int] = None
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    review: Optional[str] = None
+
+
+class CookingRecordResponse(BaseModel):
+    id: int
+    recipe_id: int
+    user_id: int
+    family_id: Optional[int]
+    started_at: datetime
+    completed_at: Optional[datetime]
+    estimated_minutes: int
+    actual_minutes: int
+    rating: Optional[int]
+    review: str
+    step_records: str
+    created_at: datetime
+    recipe_name: Optional[str] = None
+    recipe_category: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class CookingCalendarDay(BaseModel):
+    date: str
+    records: List[CookingRecordResponse] = []
+
+
 class ImportPreviewResponse(BaseModel):
     total_rows: int
     sample_data: List[dict]

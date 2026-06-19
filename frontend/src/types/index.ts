@@ -239,3 +239,49 @@ export interface ExportRequest {
   recipe_ids?: number[];
   format: 'xlsx' | 'csv';
 }
+
+export interface CookingRecord {
+  id: number;
+  recipe_id: number;
+  user_id: number;
+  family_id?: number | null;
+  started_at: string;
+  completed_at?: string | null;
+  estimated_minutes: number;
+  actual_minutes: number;
+  rating?: number | null;
+  review: string;
+  step_records: string;
+  created_at: string;
+  recipe_name?: string | null;
+  recipe_category?: string | null;
+}
+
+export interface CookingRecordCreate {
+  recipe_id: number;
+  started_at: string;
+  completed_at?: string | null;
+  estimated_minutes: number;
+  actual_minutes: number;
+  rating?: number | null;
+  review: string;
+  step_records: string;
+}
+
+export interface CookingRecordUpdate {
+  completed_at?: string | null;
+  actual_minutes?: number;
+  rating?: number | null;
+  review?: string | null;
+}
+
+export interface CookingCalendarDay {
+  date: string;
+  records: CookingRecord[];
+}
+
+export interface CookingCalendarData {
+  year: number;
+  month: number;
+  days: CookingCalendarDay[];
+}

@@ -172,6 +172,27 @@ class Notification(Base):
     user = relationship("User", back_populates="notifications")
 
 
+class CookingRecord(Base):
+    __tablename__ = "cooking_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    recipe_id = Column(Integer, ForeignKey("recipes.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    family_id = Column(Integer, ForeignKey("families.id"), nullable=True)
+    started_at = Column(DateTime, nullable=False)
+    completed_at = Column(DateTime, nullable=True)
+    estimated_minutes = Column(Integer, default=0)
+    actual_minutes = Column(Integer, default=0)
+    rating = Column(Integer, nullable=True)
+    review = Column(Text, default="")
+    step_records = Column(Text, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    recipe = relationship("Recipe", backref="cooking_records")
+    user = relationship("User", backref="cooking_records")
+    family = relationship("Family", backref="cooking_records")
+
+
 class MealPlan(Base):
     __tablename__ = "meal_plans"
 

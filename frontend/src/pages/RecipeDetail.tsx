@@ -21,13 +21,16 @@ import {
   UserOutlined,
   CheckCircleOutlined,
   ShoppingCartOutlined,
+  FireOutlined,
 } from '@ant-design/icons';
 import { Recipe } from '@/types';
 import { getRecipe, toggleFavorite as toggleFav } from '@/api/recipes';
+import { createCookingRecord } from '@/api/cooking';
 import { formatDuration, getCategoryIcon, getDifficultyText, getDifficultyColor } from '@/utils';
 import CountdownTimer from '@/components/CountdownTimer';
 import NutritionCard from '@/components/NutritionCard';
 import ImageCarousel from '@/components/ImageCarousel';
+import CookingMode from '@/components/CookingMode';
 
 const { Step } = Steps;
 
@@ -38,6 +41,7 @@ const RecipeDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [currentStep, setCurrentStep] = useState(0);
+  const [cookingMode, setCookingMode] = useState(false);
 
   useEffect(() => {
     const loadRecipe = async () => {
@@ -85,6 +89,33 @@ const RecipeDetail: React.FC = () => {
     message.success('已将食材添加到购物清单');
   };
 
+  const handleCookingComplete = async (data: {
+    startedAt: string;
+    completedAt: string;
+    actualMinutes: number;
+    stepRecords: string;
+    rating: number;
+    review: string;
+  }) => {
+    if (!recipe) return;
+    try {
+      await createCookingRecord({
+        recipe_id: recipe.id,
+        started_at: data.startedAt,
+        completed_at: data.completedAt,
+        estimated_minutes: recipe.cook_time,
+        actual_minutes: data.actualMinutes,
+        rating: data.rating || undefined as any,
+        review: data.review,
+        step_records: data.stepRecords,
+      });
+      message.success('烹饪记录已保存！');
+      setCookingMode(false);
+    } catch {
+      message.error('保存烹饪记录失败');
+    }
+  };
+
   if (loading) {
     return <Empty description="加载中..." style={{ marginTop: 64 }} />;
   }
@@ -102,6 +133,16 @@ const RecipeDetail: React.FC = () => {
 
   return (
     <div className="page-container animate-fadeIn">
+      {cookingMode && recipe && (
+        <CookingMode
+          steps={recipe.steps}
+          recipeName={recipe.name}
+          recipeId={recipe.id}
+          estimatedMinutes={recipe.cook_time}
+          onComplete={handleCookingComplete}
+          onCancel={() => setCookingMode(false)}
+        />
+      )}
       <Breadcrumb style={{ marginBottom: 16 }}>
         <Breadcrumb.Item>
           <span onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
@@ -270,6 +311,26 @@ const RecipeDetail: React.FC = () => {
               </div>
             ))}
           </Card>
+
+          <Button
+            type="primary"
+            size="large"
+            block
+            icon={<FireOutlined />}
+            onClick={() => setCookingMode(true)}
+            style={{
+              height: 56,
+              borderRadius: 16,
+              fontSize: 18,
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #FF8A65, #FF5722)',
+              border: 'none',
+              boxShadow: '0 6px 20px rgba(255,87,34,0.3)',
+              marginBottom: 24,
+            }}
+          >
+            开始烹饪
+          </Button>
         </Col>
 
         <Col xs={24} lg={8}>
