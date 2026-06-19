@@ -40,6 +40,7 @@ const mapRecipeToFE = (data: any): Recipe => {
     description: data.description || '',
     category: data.category || '家常菜',
     difficulty: mapDifficultyToFE(data.difficulty),
+    prep_time: data.prep_time || 0,
     cook_time: data.cook_time || 0,
     total_time: (data.prep_time || 0) + (data.cook_time || 0),
     servings: data.servings || 1,

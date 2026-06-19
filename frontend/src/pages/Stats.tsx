@@ -130,8 +130,8 @@ const Stats: React.FC = () => {
   const getCalendarGrid = () => {
     if (!calendarData?.days) return [];
     const firstDay = dayjs(`${calendarYear}-${String(calendarMonth).padStart(2, '0')}-01`);
-    let startDow = firstDay.day();
-    if (startDow === 0) startDow = 7;
+    let startDow = firstDay.day() as number;
+    if (startDow === 0) startDow = 7 as number;
     startDow -= 1;
 
     const daysMap: Record<string, CookingRecord[]> = {};

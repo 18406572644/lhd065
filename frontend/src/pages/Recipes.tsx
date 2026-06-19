@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Input,
   Select,
@@ -55,7 +55,7 @@ const Recipes: React.FC = () => {
   const [form] = Form.useForm<RecipeForm>();
   const [importExportOpen, setImportExportOpen] = useState(false);
 
-  const loadRecipes = async () => {
+  const loadRecipes = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getRecipes({ keyword, category, difficulty });
@@ -65,11 +65,11 @@ const Recipes: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [keyword, category, difficulty]);
 
   useEffect(() => {
     loadRecipes();
-  }, [keyword, category, difficulty]);
+  }, [loadRecipes]);
 
   const handleCreate = () => {
     setEditingId(null);

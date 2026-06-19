@@ -355,90 +355,410 @@ def detect_website(url: str) -> str:
 
 def parse_xiachufang(html: str) -> Dict[str, Any]:
     soup = BeautifulSoup(html, "lxml")
-    title = soup.select_one("h1.page-title")
+
+    title = (
+        soup.select_one("h1.page-title")
+        or soup.select_one(".recipe-title h1")
+        or soup.select_one("h1#recipe-title")
+        or soup.select_one("h1")
+    )
     title = title.get_text(strip=True) if title else ""
-    desc = soup.select_one(".recipe-description")
+
+    desc = (
+        soup.select_one(".recipe-description")
+        or soup.select_one(".recipe-intro")
+        or soup.select_one(".desc")
+        or soup.select_one(".recipe-introduction")
+    )
     desc = desc.get_text(strip=True) if desc else ""
-    cover = soup.select_one(".recipe-show .cover img")
-    image = cover["src"] if cover and cover.get("src") else ""
+
+    cover = (
+        soup.select_one(".recipe-show .cover img")
+        or soup.select_one(".main-pic img")
+        or soup.select_one(".recipe_photo img")
+        or soup.select_one(".cover-image img")
+        or soup.select_one("img#recipe_photo")
+        or soup.select_one(".recipe-image img")
+    )
+    image = ""
+    if cover:
+        image = cover.get("src", "") or cover.get("data-src", "")
+
     ingredients = []
-    for item in soup.select(".ings tr"):
-        name_td = item.select_one("td:nth-child(1)")
-        qty_td = item.select_one("td:nth-child(2)")
-        if name_td:
-            name = name_td.get_text(strip=True)
-            qty_text = qty_td.get_text(strip=True) if qty_td else ""
-            qty_match = re.match(r"(\d+\.?\d*)", qty_text)
+    ing_selectors = [
+        ".ings tr",
+        ".recipe-ingredients li",
+        ".materials li",
+        ".ingredient-list li",
+        ".rightList li",
+        ".ingredients tr",
+    ]
+    ing_items = []
+    for selector in ing_selectors:
+        found = soup.select(selector)
+        if found:
+            ing_items = found
+            break
+
+    for item in ing_items:
+        name_el = (
+            item.select_one("td:nth-child(1)")
+            or item.select_one(".name")
+            or item.select_one("span:first-child")
+            or item.select_one("a")
+            or item
+        )
+        qty_el = (
+            item.select_one("td:nth-child(2)")
+            or item.select_one(".unit")
+            or item.select_one(".amount")
+            or item.select_one("span:last-child")
+        )
+
+        if name_el:
+            name = name_el.get_text(strip=True)
+            if not name or len(name) > 30:
+                continue
+            if qty_el:
+                qty_text = qty_el.get_text(strip=True)
+            else:
+                item_text = item.get_text(strip=True)
+                qty_text = item_text.replace(name, "").strip()
+
+            qty_match = re.search(r"(\d+\.?\d*)", qty_text)
             qty = float(qty_match.group(1)) if qty_match else 0
-            unit_match = re.search(r"([^\d.]+)", qty_text)
+            unit_match = re.search(r"([^\d.，,、\s]+)", qty_text)
             unit = unit_match.group(1).strip() if unit_match else "克"
+            if not unit or len(unit) > 5:
+                unit = "克"
             ingredients.append({"name": name, "quantity": qty, "unit": unit})
+
     steps = []
-    for i, step in enumerate(soup.select(".steps li"), 1):
-        instruction = step.select_one(".content")
-        instruction = instruction.get_text(strip=True) if instruction else ""
-        if instruction:
-            steps.append({
-                "step_number": i,
-                "instruction": instruction,
-                "timer_minutes": 0
-            })
-    info = soup.select_one(".recipe_stats")
+    step_selectors = [
+        ".steps li",
+        ".recipe-steps li",
+        ".step-list li",
+        ".content ol li",
+        ".steps .step",
+        ".recipe_method li",
+        ".method li",
+    ]
+    step_items = []
+    for selector in step_selectors:
+        found = soup.select(selector)
+        if found:
+            step_items = found
+            break
+
+    if not step_items:
+        alt_step_containers = soup.select(".steps, .recipe-steps, .step-list")
+        for container in alt_step_containers:
+            text = container.get_text("\n", strip=True)
+            for idx, line in enumerate(text.split("\n"), 1):
+                line = line.strip()
+                if line and len(line) > 3 and re.match(r"^\d+[.、．]", line):
+                    line = re.sub(r"^\d+[.、．]\s*", "", line)
+                    steps.append({
+                        "step_number": idx,
+                        "instruction": line,
+                        "timer_minutes": 0
+                    })
+            if steps:
+                break
+
+    if not steps:
+        for i, step in enumerate(step_items, 1):
+            instruction_el = (
+                step.select_one(".content")
+                or step.select_one(".step-content")
+                or step.select_one(".text")
+                or step.select_one(".description")
+                or step.select_one("p")
+                or step
+            )
+            instruction = instruction_el.get_text(strip=True) if instruction_el else ""
+            instruction = re.sub(r"^\d+[.、．\s]*", "", instruction).strip()
+
+            if instruction and len(instruction) > 3:
+                timer = 0
+                time_match = re.search(r"(\d+)\s*(分钟|分|min)", instruction)
+                if time_match:
+                    timer = int(time_match.group(1))
+                steps.append({
+                    "step_number": i,
+                    "instruction": instruction,
+                    "timer_minutes": timer
+                })
+
+    prep_time = 0
     cook_time = 0
     difficulty = "简单"
-    if info:
-        info_text = info.get_text()
-        time_match = re.search(r"(\d+)\s*分钟", info_text)
-        if time_match:
-            cook_time = int(time_match.group(1))
+    servings = 2
+
+    info_selectors = [
+        ".recipe_stats",
+        ".recipe-info",
+        ".recipe-meta",
+        ".cook-info",
+        ".stats",
+        ".recipe-detail",
+    ]
+    info_text = ""
+    for selector in info_selectors:
+        el = soup.select_one(selector)
+        if el:
+            info_text = el.get_text("\n", strip=True)
+            break
+
+    if not info_text:
+        meta_items = soup.select(".meta-item, .stat-item, .info-item")
+        info_text = "\n".join([m.get_text(strip=True) for m in meta_items])
+
+    if info_text:
+        prep_match = re.search(r"(准备|备料|预处理).*?(\d+)\s*(分钟|分)", info_text)
+        if prep_match:
+            prep_time = int(prep_match.group(2))
+
+        cook_match = re.search(r"(烹饪|炒|煮|蒸|烤|烧).*?(\d+)\s*(分钟|分)", info_text)
+        if not cook_match:
+            cook_match = re.search(r"(\d+)\s*(分钟|分)", info_text)
+        if cook_match:
+            groups = cook_match.groups()
+            if len(groups) >= 2:
+                cook_time = int(groups[-2]) if groups[-2].isdigit() else int(groups[0])
+
+        diff_map = {
+            "简单": "简单", "容易": "简单", "新手": "简单", "初级": "简单", "easy": "简单",
+            "中等": "中等", "一般": "中等", "普通": "中等", "中级": "中等", "medium": "中等",
+            "困难": "难", "复杂": "难", "高级": "难", "hard": "难", "难": "难",
+        }
+        for key, val in diff_map.items():
+            if key in info_text:
+                difficulty = val
+                break
+
+        serving_match = re.search(r"(\d+)\s*(人份|份|人)", info_text)
+        if serving_match:
+            servings = int(serving_match.group(1))
+
+    category = ""
+    cat_selectors = [
+        ".recipe-category a",
+        ".category a",
+        ".breadcrumb a",
+    ]
+    for sel in cat_selectors:
+        cat_el = soup.select_one(sel)
+        if cat_el:
+            cat_text = cat_el.get_text(strip=True)
+            if cat_text and len(cat_text) < 10:
+                category = cat_text
+                break
+
     return {
         "title": title,
         "description": desc,
         "image": image,
         "ingredients": ingredients,
         "steps": steps,
+        "prep_time": prep_time,
         "cook_time": cook_time,
-        "difficulty": difficulty
+        "servings": servings,
+        "difficulty": difficulty,
+        "category": category
     }
 
 
 def parse_meishij(html: str) -> Dict[str, Any]:
     soup = BeautifulSoup(html, "lxml")
-    title = soup.select_one("h1")
+
+    title = (
+        soup.select_one("h1")
+        or soup.select_one(".recipe-title")
+        or soup.select_one(".title h1")
+    )
     title = title.get_text(strip=True) if title else ""
-    desc = soup.select_one(".content p")
+
+    desc = (
+        soup.select_one(".content p")
+        or soup.select_one(".recipe-intro")
+        or soup.select_one(".summary")
+        or soup.select_one(".description")
+    )
     desc = desc.get_text(strip=True) if desc else ""
-    cover = soup.select_one("img#recipe_photo")
-    image = cover["src"] if cover and cover.get("src") else ""
+
+    cover = (
+        soup.select_one("img#recipe_photo")
+        or soup.select_one(".main-pic img")
+        or soup.select_one(".recipe_photo img")
+        or soup.select_one(".recipe-image img")
+        or soup.select_one(".cover img")
+    )
+    image = ""
+    if cover:
+        image = cover.get("src", "") or cover.get("data-src", "")
+
     ingredients = []
-    for item in soup.select(".materials li, .ings li"):
-        name_span = item.select_one("span")
+    ing_selectors = [
+        ".materials li",
+        ".ings li",
+        ".recipe-ingredients li",
+        ".ingredient-list li",
+        ".yl ul li",
+        ".materials p",
+    ]
+    ing_items = []
+    for selector in ing_selectors:
+        found = soup.select(selector)
+        if found:
+            ing_items = found
+            break
+
+    for item in ing_items:
+        name_span = (
+            item.select_one("span")
+            or item.select_one(".name")
+            or item.select_one("a")
+            or item
+        )
         if name_span:
             name = name_span.get_text(strip=True)
+            if not name or len(name) > 30:
+                continue
             text = item.get_text(strip=True)
             text = text.replace(name, "").strip()
-            qty_match = re.match(r"(\d+\.?\d*)", text)
+            qty_match = re.search(r"(\d+\.?\d*)", text)
             qty = float(qty_match.group(1)) if qty_match else 0
-            unit_match = re.search(r"([^\d.]+)", text)
+            unit_match = re.search(r"([^\d.，,、\s]+)", text)
             unit = unit_match.group(1).strip() if unit_match else "克"
+            if not unit or len(unit) > 5:
+                unit = "克"
             ingredients.append({"name": name, "quantity": qty, "unit": unit})
+
     steps = []
-    for i, step in enumerate(soup.select(".step li, .content ul li"), 1):
+    step_selectors = [
+        ".step li",
+        ".content ul li",
+        ".recipe-steps li",
+        ".step-list li",
+        ".make ol li",
+        ".method li",
+        ".steps .item",
+    ]
+    step_items = []
+    for selector in step_selectors:
+        found = soup.select(selector)
+        if found:
+            step_items = found
+            break
+
+    if not step_items:
+        alt_step_containers = soup.select(".step, .content > .text, .recipe_content")
+        for container in alt_step_containers:
+            text = container.get_text("\n", strip=True)
+            for idx, line in enumerate(text.split("\n"), 1):
+                line = line.strip()
+                if line and len(line) > 5:
+                    line = re.sub(r"^\d+[.、．\s]*", "", line).strip()
+                    if line and len(line) > 3:
+                        steps.append({
+                            "step_number": idx,
+                            "instruction": line,
+                            "timer_minutes": 0
+                        })
+            if steps:
+                break
+
+    for i, step in enumerate(step_items, 1):
         text = step.get_text(strip=True)
-        if text and len(text) > 5:
+        text = re.sub(r"^\d+[.、．\s]*", "", text).strip()
+        if text and len(text) > 3:
+            timer = 0
+            time_match = re.search(r"(\d+)\s*(分钟|分|min)", text)
+            if time_match:
+                timer = int(time_match.group(1))
             steps.append({
                 "step_number": i,
                 "instruction": text,
-                "timer_minutes": 0
+                "timer_minutes": timer
             })
+
+    prep_time = 0
+    cook_time = 0
+    difficulty = "简单"
+    servings = 2
+    category = ""
+
+    info_selectors = [
+        ".recipe-info",
+        ".info",
+        ".cook-info",
+        ".recipe-meta",
+        ".detail-info",
+    ]
+    info_text = ""
+    for selector in info_selectors:
+        el = soup.select_one(selector)
+        if el:
+            info_text = el.get_text("\n", strip=True)
+            break
+
+    if not info_text:
+        meta_items = soup.select(".meta-item, .item, .info-item")
+        info_text = "\n".join([m.get_text(strip=True) for m in meta_items])
+
+    if info_text:
+        prep_match = re.search(r"(准备|备料).*?(\d+)\s*(分钟|分)", info_text)
+        if prep_match:
+            prep_time = int(prep_match.group(2))
+
+        cook_match = re.search(r"(烹饪|制作|炒|煮|蒸).*?(\d+)\s*(分钟|分)", info_text)
+        if not cook_match:
+            cook_match = re.search(r"(\d+)\s*(分钟|分)", info_text)
+        if cook_match:
+            groups = cook_match.groups()
+            if len(groups) >= 2:
+                cook_time = int(groups[-2]) if groups[-2].isdigit() else int(groups[0])
+
+        diff_map = {
+            "简单": "简单", "容易": "简单", "新手": "简单", "初级": "简单",
+            "中等": "中等", "一般": "中等", "普通": "中等", "中级": "中等",
+            "困难": "难", "复杂": "难", "高级": "难", "难": "难",
+        }
+        for key, val in diff_map.items():
+            if key in info_text:
+                difficulty = val
+                break
+
+        serving_match = re.search(r"(\d+)\s*(人份|份|人)", info_text)
+        if serving_match:
+            servings = int(serving_match.group(1))
+
+    cat_selectors = [
+        ".recipe-category a",
+        ".category a",
+        ".crumb a",
+        ".position a",
+    ]
+    for sel in cat_selectors:
+        cat_el = soup.select_one(sel)
+        if cat_el:
+            cat_text = cat_el.get_text(strip=True)
+            if cat_text and len(cat_text) < 10:
+                category = cat_text
+                break
+
     return {
         "title": title,
         "description": desc,
         "image": image,
         "ingredients": ingredients,
         "steps": steps,
-        "cook_time": 0,
-        "difficulty": "简单"
+        "prep_time": prep_time,
+        "cook_time": cook_time,
+        "servings": servings,
+        "difficulty": difficulty,
+        "category": category
     }
 
 
@@ -511,10 +831,10 @@ async def import_from_url(
         recipe = Recipe(
             title=data["title"],
             description=data.get("description", ""),
-            category="",
-            prep_time=0,
-            cook_time=data.get("cook_time", 0),
-            servings=2,
+            category=data.get("category", "") or "",
+            prep_time=int(data.get("prep_time", 0) or 0),
+            cook_time=int(data.get("cook_time", 0) or 0),
+            servings=int(data.get("servings", 2) or 2),
             difficulty=data.get("difficulty", "简单"),
             image=data.get("image", ""),
             is_public=False,

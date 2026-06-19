@@ -47,6 +47,7 @@ export interface Recipe {
   description: string;
   category: string;
   difficulty: 'easy' | 'medium' | 'hard';
+  prep_time: number;
   cook_time: number;
   total_time: number;
   servings: number;

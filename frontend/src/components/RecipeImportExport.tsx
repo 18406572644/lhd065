@@ -54,12 +54,14 @@ interface RecipeImportExportProps {
   open: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  autoCloseOnSuccess?: boolean;
 }
 
 const RecipeImportExport: React.FC<RecipeImportExportProps> = ({
   open,
   onClose,
   onSuccess,
+  autoCloseOnSuccess = true,
 }) => {
   const [activeTab, setActiveTab] = useState('file');
   const [file, setFile] = useState<File | null>(null);
@@ -146,6 +148,11 @@ const RecipeImportExport: React.FC<RecipeImportExportProps> = ({
       if (result.success > 0) {
         message.success(`成功导入 ${result.success} 条食谱`);
         onSuccess?.();
+        if (autoCloseOnSuccess) {
+          setTimeout(() => {
+            onClose();
+          }, 1500);
+        }
       }
       if (result.failed > 0 || result.duplicates > 0) {
         message.warning(`${result.failed} 条失败，${result.duplicates} 条重复已跳过`);
@@ -166,6 +173,11 @@ const RecipeImportExport: React.FC<RecipeImportExportProps> = ({
       if (result.success) {
         message.success(result.message);
         onSuccess?.();
+        if (autoCloseOnSuccess) {
+          setTimeout(() => {
+            onClose();
+          }, 1500);
+        }
       } else {
         message.error(result.message);
       }
@@ -541,13 +553,37 @@ const RecipeImportExport: React.FC<RecipeImportExportProps> = ({
                   <h4 style={{ margin: '0 0 8px 0' }}>{urlResult.recipe.name}</h4>
                   <p style={{ margin: '0 0 8px 0', color: '#666' }}>{urlResult.recipe.description}</p>
                   <Space wrap>
-                    <Tag color="blue">{urlResult.recipe.category}</Tag>
-                    <Tag>{urlResult.recipe.cook_time} 分钟</Tag>
+                    {urlResult.recipe.category && <Tag color="blue">{urlResult.recipe.category}</Tag>}
+                    <Tag color="orange">难度：{urlResult.recipe.difficulty === 'easy' ? '简单' : urlResult.recipe.difficulty === 'medium' ? '中等' : '难'}</Tag>
+                    <Tag>准备：{urlResult.recipe.prep_time || 0} 分钟</Tag>
+                    <Tag>烹饪：{urlResult.recipe.cook_time || 0} 分钟</Tag>
                     <Tag>{urlResult.recipe.servings} 人份</Tag>
-                    <Tag>{urlResult.recipe.ingredients.length} 种食材</Tag>
-                    <Tag>{urlResult.recipe.steps.length} 个步骤</Tag>
+                    <Tag color={urlResult.recipe.ingredients.length > 0 ? 'green' : 'red'}>
+                      {urlResult.recipe.ingredients.length} 种食材
+                    </Tag>
+                    <Tag color={urlResult.recipe.steps.length > 0 ? 'green' : 'red'}>
+                      {urlResult.recipe.steps.length} 个步骤
+                    </Tag>
                     <Tag color="purple">来源：{urlResult.source}</Tag>
                   </Space>
+                  {urlResult.recipe.steps.length === 0 && (
+                    <Alert
+                      style={{ marginTop: 12 }}
+                      message="未解析到烹饪步骤"
+                      description="该网站页面结构可能已更新，建议手动补充步骤信息。"
+                      type="warning"
+                      showIcon
+                    />
+                  )}
+                  {urlResult.recipe.ingredients.length === 0 && (
+                    <Alert
+                      style={{ marginTop: 12 }}
+                      message="未解析到食材清单"
+                      description="该网站页面结构可能已更新，建议手动补充食材信息。"
+                      type="warning"
+                      showIcon
+                    />
+                  )}
                 </div>
               )}
             </>
