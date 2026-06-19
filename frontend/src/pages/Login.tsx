@@ -40,9 +40,7 @@ const Login: React.FC = () => {
       const result = await login(values.username, values.password);
       if (result.success) {
         message.success('登录成功！欢迎回来 ~');
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 800);
+        navigate('/dashboard', { replace: true });
       } else {
         message.error(result.message || '登录失败');
       }
@@ -74,7 +72,7 @@ const Login: React.FC = () => {
   const demoLogin = () => {
     loginForm.setFieldsValue({
       username: 'demo',
-      password: 'demo123',
+      password: '123456',
     });
   };
 
@@ -509,7 +507,7 @@ const Login: React.FC = () => {
                       }}
                       onClick={demoLogin}
                     >
-                      体验账号一键登录 (demo / demo123)
+                      体验账号一键登录 (demo / 123456)
                     </Button>
                   </Form.Item>
                 </Form>

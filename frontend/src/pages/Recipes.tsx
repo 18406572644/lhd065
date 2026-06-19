@@ -26,7 +26,7 @@ import {
   HeartFilled,
 } from '@ant-design/icons';
 import { Recipe, RecipeForm, RecipeIngredient, RecipeStep } from '@/types';
-import { mockGetRecipes, mockRecipes } from '@/api/recipes';
+import { getRecipes, createRecipe, updateRecipe, deleteRecipe, toggleFavorite } from '@/api/recipes';
 import { formatDuration, getCategoryIcon, getDifficultyText, getDifficultyColor } from '@/utils';
 import ImageUploader from '@/components/ImageUploader';
 import ImageCarousel from '@/components/ImageCarousel';
@@ -41,7 +41,6 @@ const UNITS = ['克', '毫升', '个', '勺', '片', '块', '根', '颗', '瓣',
 const Recipes: React.FC = () => {
   const navigate = useNavigate();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState('');
   const [category, setCategory] = useState('全部');
@@ -53,9 +52,10 @@ const Recipes: React.FC = () => {
   const loadRecipes = async () => {
     setLoading(true);
     try {
-      const data = (await mockGetRecipes({ keyword, category, difficulty })) as Recipe[];
+      const data = await getRecipes({ keyword, category, difficulty });
       setRecipes(data);
-      setAllRecipes((await mockGetRecipes()) as Recipe[]);
+    } catch (error) {
+      message.error('加载食谱失败');
     } finally {
       setLoading(false);
     }
@@ -97,51 +97,42 @@ const Recipes: React.FC = () => {
     setModalOpen(true);
   };
 
-  const handleDelete = (id: number) => {
-    setRecipes((prev) => prev.filter((r) => r.id !== id));
-    message.success('删除成功');
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteRecipe(id);
+      setRecipes((prev) => prev.filter((r) => r.id !== id));
+      message.success('删除成功');
+    } catch {
+      message.error('删除失败');
+    }
   };
 
-  const handleToggleFavorite = (e: React.MouseEvent, id: number) => {
+  const handleToggleFavorite = async (e: React.MouseEvent, id: number) => {
     e.stopPropagation();
-    setRecipes((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, is_favorite: !r.is_favorite } : r))
-    );
+    try {
+      const updated = await toggleFavorite(id);
+      setRecipes((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, is_favorite: updated.is_favorite } : r))
+      );
+    } catch {
+      message.error('操作失败');
+    }
   };
 
   const handleSubmit = async (values: RecipeForm) => {
-    if (editingId) {
-      setRecipes((prev) =>
-        prev.map((r) =>
-          r.id === editingId
-            ? {
-                ...r,
-                ...values,
-                total_time: values.cook_time,
-                ingredients: values.ingredients.map((ing) => ({ ...ing, amount: ing.amount || ing.quantity })),
-                images: values.images || [],
-              }
-            : r
-        )
-      );
-      message.success('食谱更新成功');
-    } else {
-      const newRecipe: Recipe = {
-        id: Date.now(),
-        ...values,
-        total_time: values.cook_time,
-        rating: 5,
-        cook_count: 0,
-        is_favorite: false,
-        created_at: new Date().toISOString().split('T')[0],
-        created_by: 1,
-        ingredients: values.ingredients.map((ing) => ({ ...ing, amount: ing.amount || ing.quantity })),
-        images: values.images || [],
-      };
-      setRecipes((prev) => [newRecipe, ...prev]);
-      message.success('食谱创建成功');
+    try {
+      if (editingId) {
+        await updateRecipe(editingId, values);
+        message.success('食谱更新成功');
+      } else {
+        await createRecipe(values);
+        message.success('食谱创建成功');
+      }
+      setModalOpen(false);
+      loadRecipes();
+    } catch {
+      message.error(editingId ? '更新失败' : '创建失败');
     }
-    setModalOpen(false);
   };
 
   return (

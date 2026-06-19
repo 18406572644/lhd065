@@ -12,9 +12,9 @@ import {
   ArrowRightOutlined,
 } from '@ant-design/icons';
 import { Recipe, InventoryItem } from '@/types';
-import { mockGetRecommendedRecipes, mockGetFavorites } from '@/api/recipes';
-import { mockGetExpiringItems, mockGetLowStock } from '@/api/inventory';
-import { mockGetCookingStats } from '@/api/stats';
+import { getRecommendedRecipes, getFavorites } from '@/api/recipes';
+import { getExpiringItems, getLowStock } from '@/api/inventory';
+import { getCookingStats } from '@/api/stats';
 import { formatDuration, getCategoryIcon, getDifficultyText, getDifficultyColor } from '@/utils';
 import ExpireBadge from '@/components/ExpireBadge';
 import NutritionCard from '@/components/NutritionCard';
@@ -34,18 +34,18 @@ const Dashboard: React.FC = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [rec, exp, low, fav, stats] = await Promise.all([
-          mockGetRecommendedRecipes(),
-          mockGetExpiringItems(7),
-          mockGetLowStock(),
-          mockGetFavorites(),
-          mockGetCookingStats(),
+        const [rec, exp, low, fav, stats] = await Promise.allSettled([
+          getRecommendedRecipes(),
+          getExpiringItems(7),
+          getLowStock(),
+          getFavorites(),
+          getCookingStats(),
         ]);
-        setRecommended(rec as Recipe[]);
-        setExpiring(exp as InventoryItem[]);
-        setLowStock(low as InventoryItem[]);
-        setFavorites(fav as Recipe[]);
-        setCookingStats(stats as any);
+        setRecommended(rec.status === 'fulfilled' ? rec.value : []);
+        setExpiring(exp.status === 'fulfilled' ? exp.value : []);
+        setLowStock(low.status === 'fulfilled' ? low.value : []);
+        setFavorites(fav.status === 'fulfilled' ? fav.value : []);
+        setCookingStats(stats.status === 'fulfilled' ? stats.value : null);
       } finally {
         setLoading(false);
       }

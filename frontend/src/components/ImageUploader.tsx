@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
-import { Upload, Modal, Button, message, Image } from 'antd';
+import { Upload, Modal, Button, message, Image as AntImage } from 'antd';
 import {
   PlusOutlined,
   DeleteOutlined,
@@ -23,9 +23,9 @@ const getBase64 = (file: File): Promise<string> =>
 
 const createImage = (url: string): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
-    const image = new Image();
+    const image = document.createElement('img');
     image.addEventListener('load', () => resolve(image));
-    image.addEventListener('error', (error) => reject(error));
+    image.addEventListener('error', (error: Event) => reject(error));
     image.crossOrigin = 'anonymous';
     image.src = url;
   });
@@ -310,7 +310,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         footer={null}
         onCancel={() => setPreviewVisible(false)}
       >
-        <Image
+        <AntImage
           alt="preview"
           style={{ width: '100%' }}
           src={previewImage}

@@ -22,6 +22,7 @@ export interface RecipeIngredient {
   quantity: number;
   amount: number;
   unit: string;
+  ingredient_id?: number;
 }
 
 export interface RecipeStep {
@@ -66,6 +67,7 @@ export interface RecipeForm {
   description: string;
   category: string;
   difficulty: 'easy' | 'medium' | 'hard';
+  prep_time: number;
   cook_time: number;
   servings: number;
   ingredients: RecipeIngredient[];

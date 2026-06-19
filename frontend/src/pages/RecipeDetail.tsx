@@ -23,7 +23,7 @@ import {
   ShoppingCartOutlined,
 } from '@ant-design/icons';
 import { Recipe } from '@/types';
-import { mockGetRecipe } from '@/api/recipes';
+import { getRecipe, toggleFavorite as toggleFav } from '@/api/recipes';
 import { formatDuration, getCategoryIcon, getDifficultyText, getDifficultyColor } from '@/utils';
 import CountdownTimer from '@/components/CountdownTimer';
 import NutritionCard from '@/components/NutritionCard';
@@ -43,8 +43,10 @@ const RecipeDetail: React.FC = () => {
     const loadRecipe = async () => {
       setLoading(true);
       try {
-        const data = (await mockGetRecipe(Number(id))) as Recipe;
-        setRecipe(data);
+        const data = await getRecipe(Number(id));
+        setRecipe(data || null);
+      } catch {
+        setRecipe(null);
       } finally {
         setLoading(false);
       }
@@ -52,10 +54,15 @@ const RecipeDetail: React.FC = () => {
     loadRecipe();
   }, [id]);
 
-  const toggleFavorite = () => {
+  const toggleFavorite = async () => {
     if (recipe) {
-      setRecipe({ ...recipe, is_favorite: !recipe.is_favorite });
-      message.success(recipe.is_favorite ? '已取消收藏' : '已加入收藏');
+      try {
+        const updated = await toggleFav(recipe.id);
+        setRecipe({ ...recipe, is_favorite: updated.is_favorite });
+        message.success(updated.is_favorite ? '已加入收藏' : '已取消收藏');
+      } catch {
+        message.error('操作失败');
+      }
     }
   };
 

@@ -10,36 +10,66 @@ export interface AuthResult {
 
 export const login = async (username: string, password: string): Promise<AuthResult> => {
   try {
-    const data: LoginForm = { username, password };
-    const result = await mockLogin(data);
-    const res = result as { token: string; user: User };
-    if (res.token && res.user) {
-      localStorage.setItem('token', res.token);
-      localStorage.setItem('user', JSON.stringify(res.user));
-      return { success: true, token: res.token, user: res.user };
+    const res = await request.post<any, { access_token: string; token_type: string }>(
+      '/auth/login/json',
+      { username, password }
+    );
+    const token = res.access_token;
+    localStorage.setItem('token', token);
+    const user = await fetchCurrentUser();
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
     }
-    return { success: false, message: '用户名或密码错误' };
+    window.dispatchEvent(new Event('auth-change'));
+    return { success: true, token, user: user || undefined };
   } catch (error: any) {
-    return { success: false, message: error.message || '登录失败' };
+    const msg = error?.response?.data?.detail || error?.message || '登录失败';
+    return { success: false, message: msg };
   }
 };
 
-export const register = async (formData: any): Promise<AuthResult> => {
+export const register = async (formData: RegisterForm): Promise<AuthResult> => {
   try {
-    const result = await mockRegister(formData as RegisterForm);
-    const res = result as { token: string; user: User };
-    if (res.token && res.user) {
-      return { success: true, token: res.token, user: res.user };
+    const res = await request.post<any, { access_token: string; token_type: string }>(
+      '/auth/register',
+      {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      }
+    );
+    const token = res.access_token;
+    localStorage.setItem('token', token);
+    const user = await fetchCurrentUser();
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
     }
-    return { success: false, message: '注册失败' };
+    window.dispatchEvent(new Event('auth-change'));
+    return { success: true, token, user: user || undefined };
   } catch (error: any) {
-    return { success: false, message: error.message || '注册失败' };
+    const msg = error?.response?.data?.detail || error?.message || '注册失败';
+    return { success: false, message: msg };
+  }
+};
+
+export const fetchCurrentUser = async (): Promise<User | null> => {
+  try {
+    const res = await request.get<any, any>('/auth/me');
+    return {
+      id: res.id,
+      username: res.username,
+      email: res.email,
+      avatar: res.avatar || undefined,
+    };
+  } catch {
+    return null;
   }
 };
 
 export const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+  window.dispatchEvent(new Event('auth-change'));
   return Promise.resolve({ success: true });
 };
 
@@ -51,28 +81,4 @@ export const getCurrentUser = (): User | null => {
     }
   } catch {}
   return null;
-};
-
-export const mockLogin = async (data: LoginForm) => {
-  const user: User = {
-    id: 1,
-    username: data.username,
-    email: `${data.username}@example.com`,
-    token: 'mock-token-' + Date.now(),
-  };
-  return new Promise((resolve) => {
-    setTimeout(() => resolve({ token: user.token, user }), 300);
-  });
-};
-
-export const mockRegister = async (data: RegisterForm) => {
-  const user: User = {
-    id: 1,
-    username: data.username,
-    email: data.email,
-    token: 'mock-token-' + Date.now(),
-  };
-  return new Promise((resolve) => {
-    setTimeout(() => resolve({ token: user.token, user }), 300);
-  });
 };

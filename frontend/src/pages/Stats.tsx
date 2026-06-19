@@ -26,10 +26,10 @@ import {
 } from 'recharts';
 import { DailyNutrition, CategoryStat, TopRecipe } from '@/types';
 import {
-  mockGetWeeklyNutrition,
-  mockGetCategoryDistribution,
-  mockGetTopRecipes,
-  mockGetCookingStats,
+  getWeeklyNutrition,
+  getCategoryDistribution,
+  getTopRecipes,
+  getCookingStats,
 } from '@/api/stats';
 import { COLORS, CATEGORY_COLORS } from '@/styles/theme';
 import { formatDuration } from '@/utils';
@@ -45,16 +45,16 @@ const Stats: React.FC = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [nutrition, cat, top, stats] = await Promise.all([
-          mockGetWeeklyNutrition(),
-          mockGetCategoryDistribution(),
-          mockGetTopRecipes(),
-          mockGetCookingStats(),
+        const [nutrition, cat, top, stats] = await Promise.allSettled([
+          getWeeklyNutrition(),
+          getCategoryDistribution(),
+          getTopRecipes(),
+          getCookingStats(),
         ]);
-        setWeeklyNutrition(nutrition as DailyNutrition[]);
-        setCategoryDistribution(cat as CategoryStat[]);
-        setTopRecipes(top as TopRecipe[]);
-        setCookingStats(stats as any);
+        setWeeklyNutrition(nutrition.status === 'fulfilled' ? (nutrition.value as DailyNutrition[]) : []);
+        setCategoryDistribution(cat.status === 'fulfilled' ? (cat.value as CategoryStat[]) : []);
+        setTopRecipes(top.status === 'fulfilled' ? (top.value as TopRecipe[]) : []);
+        setCookingStats(stats.status === 'fulfilled' ? (stats.value as any) : null);
       } finally {
         setLoading(false);
       }

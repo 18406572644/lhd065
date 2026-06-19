@@ -31,7 +31,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { InventoryItem, InventoryForm } from '@/types';
-import { mockGetInventory, mockInventory } from '@/api/inventory';
+import { getInventory } from '@/api/inventory';
 import { getRowClassName, formatDate } from '@/utils';
 import ExpireBadge from '@/components/ExpireBadge';
 import { CATEGORY_COLORS } from '@/styles/theme';
@@ -58,7 +58,7 @@ const Inventory: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const result = (await mockGetInventory({ keyword, category })) as InventoryItem[];
+      const result = await getInventory({ keyword, category });
       setData(result);
     } finally {
       setLoading(false);

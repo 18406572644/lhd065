@@ -92,6 +92,16 @@ const App: React.FC = () => {
     }
   }, [appState.token]);
 
+  useEffect(() => {
+    const handleAuthChange = () => {
+      const token = localStorage.getItem('token');
+      const user = getCurrentUser();
+      setAppState({ token, user });
+    };
+    window.addEventListener('auth-change', handleAuthChange);
+    return () => window.removeEventListener('auth-change', handleAuthChange);
+  }, []);
+
   const handleLogout = () => {
     logout();
     setAppState({ token: null, user: null });

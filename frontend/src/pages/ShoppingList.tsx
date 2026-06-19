@@ -27,8 +27,8 @@ import {
   CheckSquareOutlined,
 } from '@ant-design/icons';
 import { ShoppingItem, Recipe } from '@/types';
-import { mockGetShoppingList } from '@/api/shopping';
-import { mockGetRecipes } from '@/api/recipes';
+import { getShoppingList } from '@/api/shopping';
+import { getRecipes } from '@/api/recipes';
 import { CATEGORY_COLORS } from '@/styles/theme';
 
 const { Option } = Select;
@@ -48,9 +48,9 @@ const ShoppingList: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = (await mockGetShoppingList()) as ShoppingItem[];
-      setItems(data);
-      const recData = (await mockGetRecipes()) as Recipe[];
+      const data = await getShoppingList();
+      setItems(data as ShoppingItem[]);
+      const recData = await getRecipes();
       setRecipes(recData);
     } finally {
       setLoading(false);

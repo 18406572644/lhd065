@@ -26,7 +26,7 @@ import {
   SmileOutlined,
 } from '@ant-design/icons';
 import { FamilyMember } from '@/types';
-import { mockGetFamilyMembers } from '@/api/family';
+import { getFamilyMembers } from '@/api/family';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -54,7 +54,7 @@ const Family: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = (await mockGetFamilyMembers()) as FamilyMember[];
+      const data = (await getFamilyMembers()) as FamilyMember[];
       setMembers(data);
     } finally {
       setLoading(false);

@@ -173,11 +173,13 @@ class RecipeStepResponse(RecipeStepBase):
 class RecipeBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
     description: str = ""
+    category: str = ""
     prep_time: int = 0
     cook_time: int = 0
     servings: int = 1
     difficulty: str = "简单"
     image: str = ""
+    images: str = ""
     is_public: bool = False
 
 
@@ -189,11 +191,13 @@ class RecipeCreate(RecipeBase):
 class RecipeUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None
+    category: Optional[str] = None
     prep_time: Optional[int] = None
     cook_time: Optional[int] = None
     servings: Optional[int] = None
     difficulty: Optional[str] = None
     image: Optional[str] = None
+    images: Optional[str] = None
     is_public: Optional[bool] = None
 
 
