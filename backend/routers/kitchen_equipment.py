@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, or_, func, delete
+from sqlalchemy.orm import selectinload
 from typing import List, Optional
 from datetime import datetime, date, timedelta
 
@@ -38,7 +39,9 @@ async def list_equipment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    query = select(KitchenEquipment).where(
+    query = select(KitchenEquipment).options(
+        selectinload(KitchenEquipment.maintenance_logs)
+    ).where(
         or_(
             KitchenEquipment.user_id == current_user.id,
             KitchenEquipment.family_id == current_user.family_id
@@ -67,7 +70,9 @@ async def get_equipment(
     current_user: User = Depends(get_current_active_user)
 ):
     result = await db.execute(
-        select(KitchenEquipment).where(KitchenEquipment.id == equipment_id)
+        select(KitchenEquipment).options(
+            selectinload(KitchenEquipment.maintenance_logs)
+        ).where(KitchenEquipment.id == equipment_id)
     )
     equipment = result.scalar_one_or_none()
     if not equipment:
@@ -95,7 +100,13 @@ async def create_equipment(
     await create_default_reminders(db, equipment, current_user.id)
 
     await db.commit()
-    await db.refresh(equipment)
+    
+    result = await db.execute(
+        select(KitchenEquipment).options(
+            selectinload(KitchenEquipment.maintenance_logs)
+        ).where(KitchenEquipment.id == equipment.id)
+    )
+    equipment = result.scalar_one()
     return equipment
 
 
@@ -143,6 +154,17 @@ async def create_default_reminders(db: AsyncSession, equipment: KitchenEquipment
         )
         db.add(reminder)
 
+    if equipment.warranty_expiry:
+        reminder = EquipmentReminder(
+            equipment_id=equipment.id,
+            reminder_type='warranty',
+            title='设备保修到期提醒',
+            content=f'您的{equipment.name}保修即将到期，请注意保修期限',
+            reminder_date=equipment.warranty_expiry,
+            user_id=user_id
+        )
+        db.add(reminder)
+
 
 @router.put("/{equipment_id}", response_model=schemas.KitchenEquipmentResponse)
 async def update_equipment(
@@ -165,8 +187,66 @@ async def update_equipment(
     for field, value in update_data.items():
         setattr(equipment, field, value)
 
+    if 'warranty_expiry' in update_data and equipment.warranty_expiry:
+        warranty_reminder_result = await db.execute(
+            select(EquipmentReminder).where(
+                EquipmentReminder.equipment_id == equipment_id,
+                EquipmentReminder.reminder_type == 'warranty'
+            )
+        )
+        warranty_reminder = warranty_reminder_result.scalar_one_or_none()
+        if warranty_reminder:
+            warranty_reminder.reminder_date = equipment.warranty_expiry
+            warranty_reminder.is_triggered = False
+            warranty_reminder.is_dismissed = False
+            warranty_reminder.triggered_at = None
+        else:
+            reminder = EquipmentReminder(
+                equipment_id=equipment.id,
+                reminder_type='warranty',
+                title='设备保修到期提醒',
+                content=f'您的{equipment.name}保修即将到期，请注意保修期限',
+                reminder_date=equipment.warranty_expiry,
+                user_id=current_user.id
+            )
+            db.add(reminder)
+
+    if 'next_inspection_date' in update_data and equipment.next_inspection_date:
+        inspection_reminder_result = await db.execute(
+            select(EquipmentReminder).where(
+                EquipmentReminder.equipment_id == equipment_id,
+                EquipmentReminder.reminder_type == 'inspection'
+            )
+        )
+        inspection_reminder = inspection_reminder_result.scalar_one_or_none()
+        if inspection_reminder:
+            inspection_reminder.reminder_date = equipment.next_inspection_date
+            inspection_reminder.is_triggered = False
+            inspection_reminder.is_dismissed = False
+            inspection_reminder.triggered_at = None
+
+    if 'filter_replace_date' in update_data and equipment.filter_replace_date:
+        filter_reminder_result = await db.execute(
+            select(EquipmentReminder).where(
+                EquipmentReminder.equipment_id == equipment_id,
+                EquipmentReminder.reminder_type == 'filter_replace'
+            )
+        )
+        filter_reminder = filter_reminder_result.scalar_one_or_none()
+        if filter_reminder:
+            filter_reminder.reminder_date = equipment.filter_replace_date
+            filter_reminder.is_triggered = False
+            filter_reminder.is_dismissed = False
+            filter_reminder.triggered_at = None
+
     await db.commit()
-    await db.refresh(equipment)
+    
+    result = await db.execute(
+        select(KitchenEquipment).options(
+            selectinload(KitchenEquipment.maintenance_logs)
+        ).where(KitchenEquipment.id == equipment_id)
+    )
+    equipment = result.scalar_one()
     return equipment
 
 
@@ -223,7 +303,13 @@ async def increment_usage(
             reminder.triggered_at = datetime.utcnow()
 
     await db.commit()
-    await db.refresh(equipment)
+    
+    result = await db.execute(
+        select(KitchenEquipment).options(
+            selectinload(KitchenEquipment.maintenance_logs)
+        ).where(KitchenEquipment.id == equipment_id)
+    )
+    equipment = result.scalar_one()
     return equipment
 
 
@@ -310,7 +396,78 @@ async def check_reminders(
     if not equipment_ids:
         return {"reminders": [], "total_count": 0, "triggered_count": 0}
 
-    query = select(EquipmentReminder).where(
+    all_equipment_result = await db.execute(
+        select(KitchenEquipment).where(
+            KitchenEquipment.id.in_(equipment_ids)
+        )
+    )
+    all_equipment = list(all_equipment_result.scalars().all())
+    
+    for equip in all_equipment:
+        if equip.warranty_expiry:
+            existing_warranty_result = await db.execute(
+                select(EquipmentReminder).where(
+                    EquipmentReminder.equipment_id == equip.id,
+                    EquipmentReminder.reminder_type == 'warranty'
+                )
+            )
+            existing_warranty = existing_warranty_result.scalar_one_or_none()
+            if not existing_warranty:
+                reminder = EquipmentReminder(
+                    equipment_id=equip.id,
+                    reminder_type='warranty',
+                    title='设备保修到期提醒',
+                    content=f'您的{equip.name}保修即将到期，请注意保修期限',
+                    reminder_date=equip.warranty_expiry,
+                    user_id=current_user.id
+                )
+                db.add(reminder)
+        
+        if equip.category == '高压锅' and equip.next_inspection_date:
+            existing_inspection_result = await db.execute(
+                select(EquipmentReminder).where(
+                    EquipmentReminder.equipment_id == equip.id,
+                    EquipmentReminder.reminder_type == 'inspection'
+                )
+            )
+            existing_inspection = existing_inspection_result.scalar_one_or_none()
+            if not existing_inspection:
+                reminder = EquipmentReminder(
+                    equipment_id=equip.id,
+                    reminder_type='inspection',
+                    title='高压锅年检提醒',
+                    content=f'您的{equip.name}即将到年检日期，请安排安全检查',
+                    reminder_date=equip.next_inspection_date,
+                    user_id=current_user.id
+                )
+                db.add(reminder)
+        
+        if equip.category == '净水器' and equip.filter_replace_date:
+            existing_filter_result = await db.execute(
+                select(EquipmentReminder).where(
+                    EquipmentReminder.equipment_id == equip.id,
+                    EquipmentReminder.reminder_type == 'filter_replace'
+                )
+            )
+            existing_filter = existing_filter_result.scalar_one_or_none()
+            if not existing_filter:
+                reminder = EquipmentReminder(
+                    equipment_id=equip.id,
+                    reminder_type='filter_replace',
+                    title='净水器滤芯更换提醒',
+                    content=f'您的{equip.name}滤芯即将到期，请及时更换',
+                    reminder_date=equip.filter_replace_date,
+                    user_id=current_user.id
+                )
+                db.add(reminder)
+    
+    await db.flush()
+
+    query = select(EquipmentReminder).options(
+        selectinload(EquipmentReminder.equipment).selectinload(
+            KitchenEquipment.maintenance_logs
+        )
+    ).where(
         EquipmentReminder.equipment_id.in_(equipment_ids),
         EquipmentReminder.is_dismissed == False
     )
@@ -321,12 +478,36 @@ async def check_reminders(
     for reminder in all_reminders:
         is_triggered = reminder.is_triggered
 
-        if not is_triggered and reminder.reminder_date:
+        if reminder.reminder_date:
             days_until = (reminder.reminder_date - today).days
-            if days_until <= 7:
+            if not is_triggered and days_until <= 7:
                 is_triggered = True
                 reminder.is_triggered = True
                 reminder.triggered_at = datetime.utcnow()
+            
+            if is_triggered:
+                equip_name = reminder.equipment.name if reminder.equipment else '设备'
+                if days_until < 0:
+                    days_overdue = abs(days_until)
+                    if reminder.reminder_type == 'warranty':
+                        reminder.title = '⚠️ 设备保修已过期'
+                        reminder.content = f'您的{equip_name}保修已过期{days_overdue}天，已不在保修期内'
+                    elif reminder.reminder_type == 'inspection':
+                        reminder.title = '⚠️ 年检已超期'
+                        reminder.content = f'您的{equip_name}年检已超期{days_overdue}天，请尽快安排安全检查'
+                    elif reminder.reminder_type == 'filter_replace':
+                        reminder.title = '⚠️ 滤芯更换已超期'
+                        reminder.content = f'您的{equip_name}滤芯更换已超期{days_overdue}天，请及时更换'
+                else:
+                    if reminder.reminder_type == 'warranty':
+                        reminder.title = '设备保修到期提醒'
+                        reminder.content = f'您的{equip_name}保修将在{days_until}天后到期'
+                    elif reminder.reminder_type == 'inspection':
+                        reminder.title = '年检提醒'
+                        reminder.content = f'您的{equip_name}将在{days_until}天后需要年检'
+                    elif reminder.reminder_type == 'filter_replace':
+                        reminder.title = '滤芯更换提醒'
+                        reminder.content = f'您的{equip_name}滤芯将在{days_until}天后需要更换'
 
         if not is_triggered and reminder.usage_threshold and reminder.equipment_id:
             equip_result_inner = await db.execute(
@@ -371,7 +552,11 @@ async def list_reminders(
     if not equipment_ids:
         return []
 
-    query = select(EquipmentReminder).where(
+    query = select(EquipmentReminder).options(
+        selectinload(EquipmentReminder.equipment).selectinload(
+            KitchenEquipment.maintenance_logs
+        )
+    ).where(
         EquipmentReminder.equipment_id.in_(equipment_ids)
     )
     if not include_dismissed:

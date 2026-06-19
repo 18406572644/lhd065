@@ -223,7 +223,7 @@ class RecipeResponse(RecipeBase):
     ingredients: List[RecipeIngredientResponse] = []
     nutrition: Optional[RecipeNutrition] = None
     is_favorite: Optional[bool] = False
-    required_equipment: List[RecipeEquipmentResponse] = []
+    required_equipment: List["RecipeEquipmentResponse"] = []
 
     class Config:
         from_attributes = True

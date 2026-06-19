@@ -276,6 +276,7 @@ const KitchenEquipmentPage: React.FC = () => {
     logForm.resetFields();
     logForm.setFieldsValue({
       log_type: 'cleaning',
+      title: '设备维护',
       maintenance_date: dayjs(),
       cost: 0,
       images: [],
