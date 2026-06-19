@@ -487,7 +487,7 @@ const IngredientDetail: React.FC = () => {
 
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                      <ShinkOutlined style={{ color: COLORS.teal, fontSize: 18 }} />
+                      <ShrinkOutlined style={{ color: COLORS.teal, fontSize: 18 }} />
                       <span style={{ fontSize: 16, fontWeight: 600, color: '#2D3436' }}>清洗处理技巧</span>
                     </div>
                     {renderTipsList(ingredient?.cleaning_tips || '')}

@@ -41,7 +41,7 @@ export const getSeasonIngredients = async (season: string): Promise<SeasonIngred
 export const compareIngredients = async (ids: number[]): Promise<IngredientCompareResult> => {
   return request.get('/ingredient-encyclopedia/compare', {
     params: { ids },
-    paramsSerializer: (params) => {
+    paramsSerializer: (params: { ids: number[] }) => {
       return params.ids.map((id: number) => `ids=${id}`).join('&');
     },
   } as any);

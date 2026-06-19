@@ -22,6 +22,7 @@ from routers import meal_plans as meal_plans_router
 from routers import recipe_import_export as import_export_router
 from routers import cooking as cooking_router
 from routers import ingredient_encyclopedia as encyclopedia_router
+from routers import kitchen_equipment as equipment_router
 
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
@@ -599,6 +600,7 @@ app.include_router(meal_plans_router.router, prefix="/api/meal-plans", tags=["�
 app.include_router(import_export_router.router, prefix="/api/recipes", tags=["食谱导入导出"])
 app.include_router(cooking_router.router, prefix="/api/cooking-records", tags=["烹饪记录"])
 app.include_router(encyclopedia_router.router, prefix="/api/ingredient-encyclopedia", tags=["食材百科"])
+app.include_router(equipment_router.router, prefix="/api/kitchen-equipment", tags=["厨房设备"])
 
 
 @app.get("/")

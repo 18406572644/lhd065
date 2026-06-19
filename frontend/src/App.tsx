@@ -28,6 +28,7 @@ import {
   PlusOutlined,
   CalendarOutlined,
   AppstoreOutlined,
+  ToolOutlined,
 } from '@ant-design/icons';
 import {
   Routes,
@@ -48,12 +49,14 @@ import MealPlan from './pages/MealPlan';
 import Login from './pages/Login';
 import IngredientsEncyclopedia from './pages/IngredientsEncyclopedia';
 import IngredientDetail from './pages/IngredientDetail';
+import KitchenEquipment from './pages/KitchenEquipment';
 import { logout, getCurrentUser } from './api/auth';
 import { getExpiringItems } from './api/inventory';
 import { COLORS } from './styles/theme';
 import { KitchenDecor } from './components/KitchenDecor';
 import { InventoryItem } from './types';
 import { getExpireStatus } from './utils';
+import { checkReminders } from './api/kitchenEquipment';
 
 const { Header, Sider, Content } = Layout;
 const { Title, Text } = Typography;
@@ -81,6 +84,7 @@ const App: React.FC = () => {
     user: getCurrentUser(),
   });
   const [expiringCount, setExpiringCount] = useState(0);
+  const [equipmentReminderCount, setEquipmentReminderCount] = useState(0);
 
   const fetchExpiringCount = async () => {
     try {
@@ -91,9 +95,19 @@ const App: React.FC = () => {
     }
   };
 
+  const fetchEquipmentReminders = async () => {
+    try {
+      const result = await checkReminders();
+      setEquipmentReminderCount(result.triggered_count);
+    } catch (error) {
+      console.error('获取设备提醒失败:', error);
+    }
+  };
+
   useEffect(() => {
     if (appState.token) {
       fetchExpiringCount();
+      fetchEquipmentReminders();
     }
   }, [appState.token]);
 
@@ -155,6 +169,11 @@ const App: React.FC = () => {
       key: '/recipes',
       icon: <BookOutlined />,
       label: '食谱管理',
+    },
+    {
+      key: '/kitchen-equipment',
+      icon: <ToolOutlined />,
+      label: '设备管理',
     },
     {
       key: '/ingredients',
@@ -487,6 +506,22 @@ const App: React.FC = () => {
               </Badge>
             </Tooltip>
 
+            <Tooltip title={equipmentReminderCount > 0 ? `${equipmentReminderCount} 条设备提醒` : '暂无设备提醒'}>
+              <Badge count={equipmentReminderCount} size="small" offset={[-4, 4]}>
+                <Button
+                  type="text"
+                  icon={<ToolOutlined style={{ fontSize: 18 }} />}
+                  onClick={() => navigate('/kitchen-equipment')}
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 12,
+                    color: '#636E72',
+                  }}
+                />
+              </Badge>
+            </Tooltip>
+
             <Dropdown
               menu={{ items: userMenuItems }}
               placement="bottomRight"
@@ -590,6 +625,14 @@ const App: React.FC = () => {
               }
             />
             <Route
+              path="/kitchen-equipment"
+              element={
+                <PrivateRoute>
+                  <KitchenEquipment />
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/ingredients"
               element={
                 <PrivateRoute>
@@ -659,6 +702,7 @@ const BreadcrumbTitle: React.FC<{ pathname: string }> = ({ pathname }) => {
     if (pathname === '/meal-plan') return { title: '用餐计划', desc: '轻松规划一周饮食' };
     if (pathname === '/recipes') return { title: '食谱管理', desc: '浏览与创建食谱' };
     if (pathname.startsWith('/recipes/')) return { title: '食谱详情', desc: '烹饪步骤与营养' };
+    if (pathname === '/kitchen-equipment') return { title: '设备管理', desc: '厨房设备档案与维护' };
     if (pathname === '/ingredients') return { title: '食材百科', desc: '探索食材的奥秘' };
     if (pathname.startsWith('/ingredients/')) return { title: '食材详情', desc: '营养与选购指南' };
     if (pathname === '/inventory') return { title: '食材库存', desc: '管理你的食材仓库' };

@@ -14,6 +14,7 @@ import {
   message,
   Popconfirm,
   Dropdown,
+  Checkbox,
 } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -29,8 +30,18 @@ import {
   ExportOutlined,
   DownOutlined,
 } from '@ant-design/icons';
-import { Recipe, RecipeForm, RecipeIngredient, RecipeStep } from '@/types';
+import {
+  Recipe,
+  RecipeForm,
+  RecipeIngredient,
+  RecipeStep,
+  EQUIPMENT_CATEGORIES,
+  EQUIPMENT_ICONS,
+  KitchenEquipment,
+  RecipeEquipmentForm,
+} from '@/types';
 import { getRecipes, createRecipe, updateRecipe, deleteRecipe, toggleFavorite } from '@/api/recipes';
+import { getEquipmentList } from '@/api/kitchenEquipment';
 import { formatDuration, getCategoryIcon, getDifficultyText, getDifficultyColor } from '@/utils';
 import ImageUploader from '@/components/ImageUploader';
 import ImageCarousel from '@/components/ImageCarousel';
@@ -54,18 +65,46 @@ const Recipes: React.FC = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form] = Form.useForm<RecipeForm>();
   const [importExportOpen, setImportExportOpen] = useState(false);
+  const [myEquipment, setMyEquipment] = useState<KitchenEquipment[]>([]);
+  const [filterMyEquipmentOnly, setFilterMyEquipmentOnly] = useState(false);
+
+  const loadMyEquipment = useCallback(async () => {
+    try {
+      const data = await getEquipmentList();
+      setMyEquipment(data);
+    } catch (error) {
+      console.error('加载我的设备失败:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadMyEquipment();
+  }, [loadMyEquipment]);
 
   const loadRecipes = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getRecipes({ keyword, category, difficulty });
+      let data = await getRecipes({ keyword, category, difficulty });
+
+      if (filterMyEquipmentOnly && myEquipment.length > 0) {
+        const myCategories = new Set(myEquipment.map((e) => e.category));
+        data = data.filter((recipe) => {
+          if (!recipe.required_equipment || recipe.required_equipment.length === 0) {
+            return true;
+          }
+          return recipe.required_equipment.every((eq) =>
+            myCategories.has(eq.equipment_category)
+          );
+        });
+      }
+
       setRecipes(data);
     } catch (error) {
       message.error('加载食谱失败');
     } finally {
       setLoading(false);
     }
-  }, [keyword, category, difficulty]);
+  }, [keyword, category, difficulty, filterMyEquipmentOnly, myEquipment]);
 
   useEffect(() => {
     loadRecipes();
@@ -82,6 +121,7 @@ const Recipes: React.FC = () => {
       steps: [{ order: 1, description: '', duration_minutes: 5 }],
       nutrition: { calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0, sugar: 0 },
       images: [],
+      required_equipment: [],
     });
     setModalOpen(true);
   };
@@ -99,6 +139,11 @@ const Recipes: React.FC = () => {
       steps: recipe.steps.length > 0 ? recipe.steps : [{ order: 1, description: '', duration_minutes: 5 }],
       nutrition: recipe.nutrition,
       images: recipe.images || [],
+      required_equipment: (recipe.required_equipment || []).map((eq) => ({
+        equipment_category: eq.equipment_category,
+        equipment_name: eq.equipment_name,
+        notes: eq.notes,
+      })),
     });
     setModalOpen(true);
   };
@@ -186,7 +231,7 @@ const Recipes: React.FC = () => {
               size="large"
             />
           </Col>
-          <Col xs={12} sm={7}>
+          <Col xs={12} sm={5}>
             <Select
               value={category}
               onChange={setCategory}
@@ -200,7 +245,7 @@ const Recipes: React.FC = () => {
               ))}
             </Select>
           </Col>
-          <Col xs={12} sm={7}>
+          <Col xs={12} sm={5}>
             <Select
               value={difficulty}
               onChange={setDifficulty}
@@ -213,6 +258,15 @@ const Recipes: React.FC = () => {
                 </Option>
               ))}
             </Select>
+          </Col>
+          <Col xs={24} sm={4}>
+            <Checkbox
+              checked={filterMyEquipmentOnly}
+              onChange={(e) => setFilterMyEquipmentOnly(e.target.checked)}
+              style={{ fontSize: 14, lineHeight: '40px' }}
+            >
+              🔧 我有的设备能做
+            </Checkbox>
           </Col>
         </Row>
       </div>
@@ -269,6 +323,33 @@ const Recipes: React.FC = () => {
                     {getDifficultyText(recipe.difficulty)}
                   </Tag>
                 </div>
+                {recipe.required_equipment && recipe.required_equipment.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 4,
+                      marginTop: 4,
+                    }}
+                  >
+                    {recipe.required_equipment.map((eq, i) => {
+                      const hasIt = myEquipment.some(
+                        (myEq) => myEq.category === eq.equipment_category
+                      );
+                      return (
+                        <Tag
+                          key={i}
+                          icon={<span>{EQUIPMENT_ICONS[eq.equipment_category] || '🔧'}</span>}
+                          color={hasIt ? 'success' : 'default'}
+                          style={{ margin: 0, fontSize: 11 }}
+                        >
+                          {eq.equipment_name || eq.equipment_category}
+                          {hasIt && ' ✓'}
+                        </Tag>
+                      );
+                    })}
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12, gap: 4 }}>
                   <Button
                     size="small"
@@ -558,6 +639,75 @@ const Recipes: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
+
+          <div style={{ fontSize: 14, fontWeight: 500, color: '#5A5A5A', marginBottom: 12, marginTop: 8 }}>
+            🔧 所需设备
+          </div>
+          <Form.Item>
+            <Form.List name="required_equipment">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map(({ key, name, ...restField }) => (
+                    <div
+                      key={key}
+                      style={{
+                        display: 'flex',
+                        gap: 8,
+                        marginBottom: 8,
+                        flexWrap: 'wrap',
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'equipment_category']}
+                        rules={[{ required: true, message: '设备分类' }]}
+                        style={{ margin: 0, minWidth: 140, flex: 1 }}
+                      >
+                        <Select placeholder="选择设备分类">
+                          {EQUIPMENT_CATEGORIES.map((c) => (
+                            <Option key={c} value={c}>
+                              {EQUIPMENT_ICONS[c] || '🔧'} {c}
+                            </Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'equipment_name']}
+                        style={{ margin: 0, minWidth: 150, flex: 1 }}
+                      >
+                        <Input placeholder="设备名称（可选）" />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'notes']}
+                        style={{ margin: 0, minWidth: 150, flex: 1 }}
+                      >
+                        <Input placeholder="备注（可选）" />
+                      </Form.Item>
+                      <Button
+                        type="text"
+                        danger
+                        icon={<MinusOutlined />}
+                        onClick={() => remove(name)}
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    type="dashed"
+                    block
+                    icon={<PlusOutlined />}
+                    onClick={() =>
+                      add({ equipment_category: '烤箱', equipment_name: '', notes: '' })
+                    }
+                  >
+                    添加所需设备
+                  </Button>
+                </>
+              )}
+            </Form.List>
+          </Form.Item>
 
           <Form.Item style={{ textAlign: 'right', marginTop: 24 }}>
             <Space>

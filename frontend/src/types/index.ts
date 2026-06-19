@@ -61,6 +61,7 @@ export interface Recipe {
   nutrition: Nutrition;
   created_at: string;
   created_by: number;
+  required_equipment: RecipeEquipment[];
 }
 
 export interface RecipeForm {
@@ -75,6 +76,7 @@ export interface RecipeForm {
   steps: RecipeStep[];
   nutrition: Nutrition;
   images: string[];
+  required_equipment: RecipeEquipmentForm[];
 }
 
 export interface InventoryItem {
@@ -326,4 +328,142 @@ export interface SeasonIngredients {
 
 export interface IngredientCompareResult {
   ingredients: IngredientEncyclopedia[];
+}
+
+import type { Dayjs } from 'dayjs';
+
+export type EquipmentCategory =
+  | '烤箱' | '空气炸锅' | '破壁机' | '高压锅' | '电饭煲'
+  | '微波炉' | '电磁炉' | '净水器' | '冰箱' | '洗碗机'
+  | '油烟机' | '燃气灶' | '料理机' | '榨汁机' | '电饼铛'
+  | '面包机' | '咖啡机' | '豆浆机' | '电水壶' | '其他';
+
+export const EQUIPMENT_CATEGORIES: EquipmentCategory[] = [
+  '烤箱', '空气炸锅', '破壁机', '高压锅', '电饭煲',
+  '微波炉', '电磁炉', '净水器', '冰箱', '洗碗机',
+  '油烟机', '燃气灶', '料理机', '榨汁机', '电饼铛',
+  '面包机', '咖啡机', '豆浆机', '电水壶', '其他'
+];
+
+export const EQUIPMENT_ICONS: Record<EquipmentCategory | string, string> = {
+  '烤箱': '🔥',
+  '空气炸锅': '🍟',
+  '破壁机': '🥤',
+  '高压锅': '🍲',
+  '电饭煲': '🍚',
+  '微波炉': '📡',
+  '电磁炉': '🔌',
+  '净水器': '💧',
+  '冰箱': '🧊',
+  '洗碗机': '🍽️',
+  '油烟机': '💨',
+  '燃气灶': '🔥',
+  '料理机': '🌀',
+  '榨汁机': '🧃',
+  '电饼铛': '🥞',
+  '面包机': '🍞',
+  '咖啡机': '☕',
+  '豆浆机': '🥛',
+  '电水壶': '🫖',
+  '其他': '🔧',
+};
+
+export interface KitchenEquipment {
+  id: number;
+  name: string;
+  brand: string;
+  model: string;
+  category: EquipmentCategory | string;
+  purchase_date: string;
+  warranty_expiry: string;
+  manual_images: string[];
+  total_usage_count: number;
+  last_cleaned_date: string;
+  last_maintenance_date: string;
+  filter_replace_date: string;
+  next_inspection_date: string;
+  notes: string;
+  user_id: number;
+  family_id?: number;
+  created_at: string;
+  updated_at: string;
+  maintenance_logs: EquipmentMaintenanceLog[];
+}
+
+export interface KitchenEquipmentForm {
+  name: string;
+  brand: string;
+  model: string;
+  category: EquipmentCategory | string;
+  purchase_date: string | Dayjs | undefined;
+  warranty_expiry: string | Dayjs | undefined;
+  manual_images: string[];
+  notes: string;
+  filter_replace_date?: string | Dayjs | undefined;
+  next_inspection_date?: string | Dayjs | undefined;
+}
+
+export type MaintenanceLogType = 'cleaning' | 'maintenance' | 'repair' | 'filter_replace' | 'inspection' | 'other';
+
+export const MAINTENANCE_LOG_TYPES: { value: MaintenanceLogType; label: string; color: string }[] = [
+  { value: 'cleaning', label: '清洁', color: 'blue' },
+  { value: 'maintenance', label: '保养', color: 'green' },
+  { value: 'repair', label: '维修', color: 'orange' },
+  { value: 'filter_replace', label: '更换滤芯', color: 'cyan' },
+  { value: 'inspection', label: '年检', color: 'purple' },
+  { value: 'other', label: '其他', color: 'default' },
+];
+
+export interface EquipmentMaintenanceLog {
+  id: number;
+  equipment_id: number;
+  log_type: MaintenanceLogType | string;
+  title: string;
+  description: string;
+  cost: number;
+  images: string[];
+  maintenance_date: string;
+  user_id: number;
+  created_at: string;
+}
+
+export interface EquipmentMaintenanceLogForm {
+  log_type: MaintenanceLogType | string;
+  title: string;
+  description: string;
+  cost: number;
+  images: string[];
+  maintenance_date: string | Dayjs;
+}
+
+export type ReminderType = 'usage_count' | 'filter_replace' | 'inspection' | 'warranty' | 'cleaning' | 'custom';
+
+export interface EquipmentReminder {
+  id: number;
+  equipment_id: number;
+  reminder_type: ReminderType | string;
+  title: string;
+  content: string;
+  reminder_date: string;
+  usage_threshold?: number;
+  is_triggered: boolean;
+  is_dismissed: boolean;
+  user_id: number;
+  created_at: string;
+  triggered_at?: string;
+  equipment?: KitchenEquipment;
+}
+
+export interface RecipeEquipment {
+  id?: number;
+  recipe_id: number;
+  equipment_category: EquipmentCategory | string;
+  equipment_name: string;
+  notes: string;
+}
+
+export interface RecipeEquipmentForm {
+  equipment_category: EquipmentCategory | string;
+  equipment_name: string;
+  notes: string;
 }

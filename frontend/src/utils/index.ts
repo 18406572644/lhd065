@@ -68,3 +68,39 @@ export const getCategoryIcon = (category: string) => {
   };
   return icons[category] || '🍽️';
 };
+
+export const getLogTypeLabel = (logType: string) => {
+  const map: Record<string, string> = {
+    cleaning: '清洁',
+    maintenance: '保养',
+    repair: '维修',
+    filter_replace: '更换滤芯',
+    inspection: '年检',
+    other: '其他',
+  };
+  return map[logType] || logType;
+};
+
+export const getLogTypeColor = (logType: string) => {
+  const map: Record<string, string> = {
+    cleaning: 'blue',
+    maintenance: 'green',
+    repair: 'orange',
+    filter_replace: 'cyan',
+    inspection: 'purple',
+    other: 'default',
+  };
+  return map[logType] || 'default';
+};
+
+export const getReminderTypeText = (type: string) => {
+  const map: Record<string, string> = {
+    usage_count: '使用次数',
+    filter_replace: '滤芯更换',
+    inspection: '年检提醒',
+    warranty: '保修到期',
+    cleaning: '清洁提醒',
+    custom: '自定义',
+  };
+  return map[type] || type;
+};

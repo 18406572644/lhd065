@@ -102,6 +102,7 @@ class Recipe(Base):
     ingredients = relationship("RecipeIngredient", back_populates="recipe", cascade="all, delete-orphan")
     favorites = relationship("Favorite", back_populates="recipe", cascade="all, delete-orphan")
     meal_plans = relationship("MealPlan", back_populates="recipe", cascade="all, delete-orphan")
+    required_equipment = relationship("RecipeEquipment", back_populates="recipe", cascade="all, delete-orphan")
 
 
 class RecipeStep(Base):
@@ -254,3 +255,81 @@ class IngredientFavorite(Base):
 
     ingredient = relationship("IngredientEncyclopedia", back_populates="favorites")
     user = relationship("User")
+
+
+class RecipeEquipment(Base):
+    __tablename__ = "recipe_equipment"
+
+    id = Column(Integer, primary_key=True, index=True)
+    recipe_id = Column(Integer, ForeignKey("recipes.id"), nullable=False)
+    equipment_category = Column(String(50), nullable=False)
+    equipment_name = Column(String(100), default="")
+    notes = Column(String(255), default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    recipe = relationship("Recipe", back_populates="required_equipment")
+
+
+class KitchenEquipment(Base):
+    __tablename__ = "kitchen_equipment"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False, index=True)
+    brand = Column(String(100), default="")
+    model = Column(String(100), default="")
+    category = Column(String(50), default="其他")
+    purchase_date = Column(Date, nullable=True)
+    warranty_expiry = Column(Date, nullable=True)
+    manual_images = Column(Text, default="")
+    total_usage_count = Column(Integer, default=0)
+    last_cleaned_date = Column(Date, nullable=True)
+    last_maintenance_date = Column(Date, nullable=True)
+    filter_replace_date = Column(Date, nullable=True)
+    next_inspection_date = Column(Date, nullable=True)
+    notes = Column(Text, default="")
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    family_id = Column(Integer, ForeignKey("families.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", backref="kitchen_equipment")
+    family = relationship("Family", backref="kitchen_equipment")
+    maintenance_logs = relationship("EquipmentMaintenanceLog", back_populates="equipment", cascade="all, delete-orphan")
+
+
+class EquipmentMaintenanceLog(Base):
+    __tablename__ = "equipment_maintenance_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    equipment_id = Column(Integer, ForeignKey("kitchen_equipment.id"), nullable=False)
+    log_type = Column(String(20), default="cleaning")
+    title = Column(String(200), nullable=False)
+    description = Column(Text, default="")
+    cost = Column(Float, default=0.0)
+    images = Column(Text, default="")
+    maintenance_date = Column(Date, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    equipment = relationship("KitchenEquipment", back_populates="maintenance_logs")
+    user = relationship("User", backref="equipment_maintenance_logs")
+
+
+class EquipmentReminder(Base):
+    __tablename__ = "equipment_reminders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    equipment_id = Column(Integer, ForeignKey("kitchen_equipment.id"), nullable=False)
+    reminder_type = Column(String(50), nullable=False)
+    title = Column(String(200), nullable=False)
+    content = Column(Text, default="")
+    reminder_date = Column(Date, nullable=True)
+    usage_threshold = Column(Integer, nullable=True)
+    is_triggered = Column(Boolean, default=False)
+    is_dismissed = Column(Boolean, default=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    triggered_at = Column(DateTime, nullable=True)
+
+    equipment = relationship("KitchenEquipment", backref="reminders")
+    user = relationship("User", backref="equipment_reminders")

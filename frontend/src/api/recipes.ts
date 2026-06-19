@@ -1,5 +1,16 @@
 import request from '@/utils/request';
-import { Recipe, RecipeForm, ImportPreviewResponse, RecipeImportResult, URLImportRequest, URLImportResponse, ExportRequest } from '@/types';
+import {
+  Recipe,
+  RecipeForm,
+  ImportPreviewResponse,
+  RecipeImportResult,
+  URLImportRequest,
+  URLImportResponse,
+  ExportRequest,
+  RecipeEquipment,
+  RecipeEquipmentForm,
+} from '@/types';
+import { setRecipeEquipment, getRecipeEquipment } from './kitchenEquipment';
 
 const DIFFICULTY_MAP: Record<string, string> = {
   '简单': 'easy',
@@ -75,6 +86,13 @@ const mapRecipeToFE = (data: any): Recipe => {
       : { calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0, sugar: 0 },
     created_at: data.created_at ? data.created_at.split('T')[0] : '',
     created_by: data.user_id || 0,
+    required_equipment: (data.required_equipment || []).map((eq: any) => ({
+      id: eq.id,
+      recipe_id: eq.recipe_id,
+      equipment_category: eq.equipment_category,
+      equipment_name: eq.equipment_name,
+      notes: eq.notes,
+    })),
   };
 };
 
@@ -154,7 +172,18 @@ export const createRecipe = async (data: RecipeForm): Promise<Recipe> => {
     })),
   };
   const result = await request.post('/recipes', payload);
-  return mapRecipeToFE(result);
+  const createdRecipe = mapRecipeToFE(result);
+
+  if (data.required_equipment && data.required_equipment.length > 0) {
+    try {
+      await setRecipeEquipment(createdRecipe.id, data.required_equipment);
+      createdRecipe.required_equipment = (await getRecipeEquipment(createdRecipe.id)) as any;
+    } catch (e) {
+      console.error('保存食谱设备关联失败:', e);
+    }
+  }
+
+  return createdRecipe;
 };
 
 export const updateRecipe = async (id: number, data: RecipeForm): Promise<Recipe | undefined> => {
@@ -171,7 +200,17 @@ export const updateRecipe = async (id: number, data: RecipeForm): Promise<Recipe
   };
   const result = await request.put(`/recipes/${id}`, payload);
   if (!result) return undefined;
-  return mapRecipeToFE(result);
+
+  try {
+    if (data.required_equipment !== undefined) {
+      await setRecipeEquipment(id, data.required_equipment || []);
+    }
+  } catch (e) {
+    console.error('更新食谱设备关联失败:', e);
+  }
+
+  const updated = await getRecipe(id);
+  return updated;
 };
 
 export const deleteRecipe = async (id: number): Promise<boolean> => {

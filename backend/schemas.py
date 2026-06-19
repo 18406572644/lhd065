@@ -223,6 +223,7 @@ class RecipeResponse(RecipeBase):
     ingredients: List[RecipeIngredientResponse] = []
     nutrition: Optional[RecipeNutrition] = None
     is_favorite: Optional[bool] = False
+    required_equipment: List[RecipeEquipmentResponse] = []
 
     class Config:
         from_attributes = True
@@ -598,3 +599,146 @@ class SeasonIngredientResponse(BaseModel):
 
 class IngredientCompareResponse(BaseModel):
     ingredients: List[IngredientEncyclopediaResponse] = []
+
+
+class KitchenEquipmentBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    brand: str = ""
+    model: str = ""
+    category: str = "其他"
+    purchase_date: Optional[date] = None
+    warranty_expiry: Optional[date] = None
+    manual_images: str = ""
+    total_usage_count: int = 0
+    last_cleaned_date: Optional[date] = None
+    last_maintenance_date: Optional[date] = None
+    filter_replace_date: Optional[date] = None
+    next_inspection_date: Optional[date] = None
+    notes: str = ""
+
+
+class KitchenEquipmentCreate(KitchenEquipmentBase):
+    pass
+
+
+class KitchenEquipmentUpdate(BaseModel):
+    name: Optional[str] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    category: Optional[str] = None
+    purchase_date: Optional[date] = None
+    warranty_expiry: Optional[date] = None
+    manual_images: Optional[str] = None
+    total_usage_count: Optional[int] = None
+    last_cleaned_date: Optional[date] = None
+    last_maintenance_date: Optional[date] = None
+    filter_replace_date: Optional[date] = None
+    next_inspection_date: Optional[date] = None
+    notes: Optional[str] = None
+
+
+class EquipmentMaintenanceLogBase(BaseModel):
+    equipment_id: int
+    log_type: str = "cleaning"
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = ""
+    cost: float = 0.0
+    images: str = ""
+    maintenance_date: date
+
+
+class EquipmentMaintenanceLogCreate(EquipmentMaintenanceLogBase):
+    pass
+
+
+class EquipmentMaintenanceLogUpdate(BaseModel):
+    log_type: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    cost: Optional[float] = None
+    images: Optional[str] = None
+    maintenance_date: Optional[date] = None
+
+
+class EquipmentMaintenanceLogResponse(EquipmentMaintenanceLogBase):
+    id: int
+    user_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class KitchenEquipmentResponse(KitchenEquipmentBase):
+    id: int
+    user_id: int
+    family_id: Optional[int]
+    created_at: datetime
+    updated_at: datetime
+    maintenance_logs: List[EquipmentMaintenanceLogResponse] = []
+    required_equipment_recipes: Optional[int] = 0
+
+    class Config:
+        from_attributes = True
+
+
+class EquipmentReminderBase(BaseModel):
+    equipment_id: int
+    reminder_type: str = Field(..., min_length=1, max_length=50)
+    title: str = Field(..., min_length=1, max_length=200)
+    content: str = ""
+    reminder_date: Optional[date] = None
+    usage_threshold: Optional[int] = None
+    is_triggered: bool = False
+    is_dismissed: bool = False
+
+
+class EquipmentReminderCreate(EquipmentReminderBase):
+    pass
+
+
+class EquipmentReminderUpdate(BaseModel):
+    is_triggered: Optional[bool] = None
+    is_dismissed: Optional[bool] = None
+    triggered_at: Optional[datetime] = None
+
+
+class EquipmentReminderResponse(EquipmentReminderBase):
+    id: int
+    user_id: int
+    created_at: datetime
+    triggered_at: Optional[datetime] = None
+    equipment: Optional[KitchenEquipmentResponse] = None
+
+    class Config:
+        from_attributes = True
+
+
+class RecipeEquipmentBase(BaseModel):
+    recipe_id: int
+    equipment_category: str = Field(..., min_length=1, max_length=50)
+    equipment_name: str = ""
+    notes: str = ""
+
+
+class RecipeEquipmentCreate(RecipeEquipmentBase):
+    pass
+
+
+class RecipeEquipmentResponse(RecipeEquipmentBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class EquipmentReminderCheckResponse(BaseModel):
+    reminders: List[EquipmentReminderResponse] = []
+    total_count: int = 0
+    triggered_count: int = 0
+
+
+class EquipmentCategoryStats(BaseModel):
+    category: str
+    count: int
