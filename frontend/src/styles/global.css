@@ -87,6 +87,16 @@ body {
   height: 36px;
 }
 
+.ant-btn > .anticon {
+  font-size: 14px !important;
+  line-height: 1;
+}
+
+.ant-btn svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
 .kitchen-user {
   display: flex;
   align-items: center;

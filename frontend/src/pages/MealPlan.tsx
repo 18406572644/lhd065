@@ -146,7 +146,9 @@ const MealPlanPage: React.FC = () => {
     );
   };
 
-  const handleDragStart = (recipe: Recipe) => {
+  const handleDragStart = (e: React.DragEvent, recipe: Recipe) => {
+    e.dataTransfer.setData('text/plain', String(recipe.id));
+    e.dataTransfer.effectAllowed = 'copy';
     setDraggedRecipe(recipe);
   };
 
@@ -157,28 +159,45 @@ const MealPlanPage: React.FC = () => {
 
   const handleDragOver = (e: React.DragEvent, date: string, mealType: MealType) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
     setDragOverCell(`${date}-${mealType}`);
   };
 
-  const handleDragLeave = () => {
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
     setDragOverCell(null);
   };
 
-  const handleDrop = async (date: string, mealType: MealType) => {
-    if (!draggedRecipe) return;
+  const handleDrop = async (e: React.DragEvent, date: string, mealType: MealType) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    let recipe: Recipe | null | undefined = draggedRecipe;
+    if (!recipe) {
+      const recipeId = parseInt(e.dataTransfer.getData('text/plain'), 10);
+      if (!isNaN(recipeId)) {
+        recipe = recipes.find((r) => r.id === recipeId) || null;
+      }
+    }
+
+    if (!recipe) {
+      message.error('请选择有效的食谱');
+      setDragOverCell(null);
+      return;
+    }
 
     const existingPlan = getPlanForCell(date, mealType);
 
     try {
       if (existingPlan) {
-        await updateMealPlan(existingPlan.id, { recipe_id: draggedRecipe.id });
+        await updateMealPlan(existingPlan.id, { recipe_id: recipe.id });
         message.success('已替换食谱');
       } else {
         await createMealPlan({
-          recipe_id: draggedRecipe.id,
+          recipe_id: recipe.id,
           meal_type: mealType,
           plan_date: date,
-          servings: draggedRecipe.servings || 2,
+          servings: recipe.servings || 2,
         });
         message.success('已添加到计划');
       }
@@ -516,8 +535,8 @@ const MealPlanPage: React.FC = () => {
                     position: 'relative',
                   }}
                   onDragOver={(e) => handleDragOver(e, dateStr, meal.type)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={() => handleDrop(dateStr, meal.type)}
+                  onDragLeave={(e) => handleDragLeave(e)}
+                  onDrop={(e) => handleDrop(e, dateStr, meal.type)}
                   onClick={() => {
                     if (!plan) setRecipeDrawerOpen(true);
                   }}
@@ -684,7 +703,7 @@ const MealPlanPage: React.FC = () => {
                 <div
                   key={recipe.id}
                   draggable
-                  onDragStart={() => handleDragStart(recipe)}
+                  onDragStart={(e) => handleDragStart(e, recipe)}
                   onDragEnd={handleDragEnd}
                   style={{
                     padding: 12,
@@ -696,6 +715,7 @@ const MealPlanPage: React.FC = () => {
                     gap: 12,
                     alignItems: 'center',
                     transition: 'all 0.2s ease',
+                    userSelect: 'none',
                   }}
                   className="draggable-recipe"
                 >

@@ -350,22 +350,20 @@ async def recommend_meal_plans(
         selectinload(Recipe.ingredients).selectinload(RecipeIngredient.ingredient)
     )
 
-    recipe_conditions = [Recipe.is_public == True]
+    visibility_conditions = [Recipe.is_public == True]
     if current_user.family_id:
-        recipe_conditions.append(or_(
-            Recipe.family_id == current_user.family_id,
-            Recipe.user_id == current_user.id
-        ))
+        visibility_conditions.append(Recipe.family_id == current_user.family_id)
+        visibility_conditions.append(Recipe.user_id == current_user.id)
     else:
-        recipe_conditions.append(Recipe.user_id == current_user.id)
+        visibility_conditions.append(Recipe.user_id == current_user.id)
 
-    query = query.where(or_(*recipe_conditions, Recipe.is_public == True))
+    query = query.where(or_(*visibility_conditions))
 
     if request.categories:
         query = query.where(Recipe.category.in_(request.categories))
 
     result = await db.execute(query)
-    all_recipes = result.scalars().all()
+    all_recipes = list(result.scalars().all())
 
     if request.max_calories is not None or request.min_protein is not None:
         filtered_recipes = []
@@ -394,7 +392,47 @@ async def recommend_meal_plans(
 
     recommendations = []
     used_recipes = set()
-    num_recipes = len(all_recipes)
+    now = datetime.utcnow()
+
+    def recipe_to_dict(recipe: Recipe):
+        return {
+            "id": recipe.id,
+            "name": recipe.name,
+            "description": recipe.description,
+            "category": recipe.category,
+            "cook_time": recipe.cook_time,
+            "servings": recipe.servings,
+            "difficulty": recipe.difficulty,
+            "images": recipe.images,
+            "is_public": recipe.is_public,
+            "user_id": recipe.user_id,
+            "family_id": recipe.family_id,
+            "created_at": recipe.created_at,
+            "views": recipe.views,
+            "likes": recipe.likes,
+            "steps": [],
+            "ingredients": [
+                {
+                    "id": ri.id,
+                    "recipe_id": ri.recipe_id,
+                    "ingredient_id": ri.ingredient_id,
+                    "quantity": ri.quantity,
+                    "notes": ri.notes,
+                    "ingredient": {
+                        "id": ri.ingredient.id,
+                        "name": ri.ingredient.name,
+                        "category": ri.ingredient.category,
+                        "unit": ri.ingredient.unit,
+                        "nutrition_calories": ri.ingredient.nutrition_calories,
+                        "nutrition_protein": ri.ingredient.nutrition_protein,
+                        "nutrition_carbs": ri.ingredient.nutrition_carbs,
+                        "nutrition_fat": ri.ingredient.nutrition_fat,
+                    } if ri.ingredient else None
+                } for ri in recipe.ingredients
+            ],
+            "nutrition": None,
+            "is_favorite": False,
+        }
 
     for day in range(request.days):
         plan_date = start_date + timedelta(days=day)
@@ -407,27 +445,33 @@ async def recommend_meal_plans(
         recipe = random.choice(available)
         used_recipes.add(recipe.id)
 
-        plan = MealPlan(
-            recipe_id=recipe.id,
-            meal_type=request.meal_type,
-            plan_date=plan_date,
-            servings=recipe.servings,
-            user_id=current_user.id,
-            family_id=current_user.family_id
-        )
-        plan.recipe = recipe
-        plan.id = day + 1
-        plan.created_at = datetime.utcnow()
-        plan.updated_at = datetime.utcnow()
-        plan.is_completed = False
-        plan.completed_at = None
-        plan.notes = ""
+        plan_dict = {
+            "id": day + 1,
+            "recipe_id": recipe.id,
+            "meal_type": request.meal_type,
+            "plan_date": plan_date.isoformat(),
+            "servings": recipe.servings,
+            "notes": "",
+            "is_completed": False,
+            "completed_at": None,
+            "created_at": now,
+            "updated_at": now,
+            "user_id": current_user.id,
+            "family_id": current_user.family_id,
+            "recipe": recipe_to_dict(recipe),
+        }
+        recommendations.append(plan_dict)
 
-        recommendations.append(plan)
+    meal_type_label = {
+        "breakfast": "早餐",
+        "lunch": "午餐",
+        "dinner": "晚餐",
+        "snack": "加餐"
+    }.get(request.meal_type, request.meal_type)
 
     return schemas.MealPlanRecommendResponse(
         recommendations=recommendations,
-        message=f"已为你推荐 {len(recommendations)} 个{request.meal_type}计划"
+        message=f"已为你推荐 {len(recommendations)} 个{meal_type_label}计划"
     )
 
 
