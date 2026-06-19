@@ -18,6 +18,7 @@ import { mockGetCookingStats } from '@/api/stats';
 import { formatDuration, getCategoryIcon, getDifficultyText, getDifficultyColor } from '@/utils';
 import ExpireBadge from '@/components/ExpireBadge';
 import NutritionCard from '@/components/NutritionCard';
+import ImageCarousel from '@/components/ImageCarousel';
 import dayjs from 'dayjs';
 
 const Dashboard: React.FC = () => {
@@ -165,7 +166,11 @@ const Dashboard: React.FC = () => {
                     onClick={() => navigate(`/recipes/${recipe.id}`)}
                   >
                     <div className="recipe-card-image">
-                      <span>{getCategoryIcon(recipe.category)}</span>
+                      <ImageCarousel
+                        images={recipe.images || []}
+                        fallbackIcon={<span style={{ fontSize: 48 }}>{getCategoryIcon(recipe.category)}</span>}
+                        height={140}
+                      />
                     </div>
                     <div className="recipe-card-body">
                       <div className="recipe-card-title">{recipe.name}</div>

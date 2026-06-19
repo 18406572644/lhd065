@@ -50,6 +50,7 @@ export interface Recipe {
   total_time: number;
   servings: number;
   image_url?: string;
+  images: string[];
   is_favorite: boolean;
   rating?: number;
   cook_count?: number;
@@ -70,6 +71,7 @@ export interface RecipeForm {
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
   nutrition: Nutrition;
+  images: string[];
 }
 
 export interface InventoryItem {

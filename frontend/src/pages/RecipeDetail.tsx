@@ -27,6 +27,7 @@ import { mockGetRecipe } from '@/api/recipes';
 import { formatDuration, getCategoryIcon, getDifficultyText, getDifficultyColor } from '@/utils';
 import CountdownTimer from '@/components/CountdownTimer';
 import NutritionCard from '@/components/NutritionCard';
+import ImageCarousel from '@/components/ImageCarousel';
 
 const { Step } = Steps;
 
@@ -137,20 +138,17 @@ const RecipeDetail: React.FC = () => {
             }}
             bodyStyle={{ padding: 0 }}
           >
-            <div
-              style={{
-                height: 220,
-                background: 'linear-gradient(135deg, #DCEDC8 0%, #FFCCBC 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 96,
-                position: 'relative',
-              }}
-            >
-              <span style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}>
-                {getCategoryIcon(recipe.category)}
-              </span>
+            <div style={{ position: 'relative' }}>
+              <ImageCarousel
+                images={recipe.images || []}
+                fallbackIcon={
+                  <span style={{ fontSize: 96, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}>
+                    {getCategoryIcon(recipe.category)}
+                  </span>
+                }
+                height={320}
+                interval={4000}
+              />
               <div
                 style={{
                   position: 'absolute',
@@ -158,6 +156,7 @@ const RecipeDetail: React.FC = () => {
                   right: 16,
                   display: 'flex',
                   gap: 8,
+                  zIndex: 10,
                 }}
               >
                 <Tag color="green" style={{ fontSize: 14, padding: '4px 12px' }}>

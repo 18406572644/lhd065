@@ -30,6 +30,7 @@ export const createRecipe = async (data: RecipeForm): Promise<Recipe> => {
     created_at: new Date().toISOString(),
     created_by: 1,
     ingredients: data.ingredients.map(ing => ({ ...ing, amount: ing.amount || ing.quantity })),
+    images: data.images || [],
   };
   mockRecipes.unshift(newRecipe);
   return new Promise(resolve => setTimeout(() => resolve(newRecipe), 300));
@@ -43,6 +44,7 @@ export const updateRecipe = async (id: number, data: RecipeForm): Promise<Recipe
       ...data,
       total_time: data.cook_time,
       ingredients: data.ingredients.map(ing => ({ ...ing, amount: ing.amount || ing.quantity })),
+      images: data.images || mockRecipes[idx].images || [],
     };
     return new Promise(resolve => setTimeout(() => resolve(mockRecipes[idx]), 300));
   }
@@ -90,6 +92,10 @@ export const mockRecipes: Recipe[] = [
     cook_count: 128,
     servings: 2,
     is_favorite: true,
+    images: [
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80',
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80',
+    ],
     ingredients: addIng([
       { name: '番茄', quantity: 2, unit: '个' },
       { name: '鸡蛋', quantity: 3, unit: '个' },
@@ -119,6 +125,11 @@ export const mockRecipes: Recipe[] = [
     cook_count: 86,
     servings: 4,
     is_favorite: false,
+    images: [
+      'https://images.unsplash.com/photo-1544025162-d76694265947?w=800&q=80',
+      'https://images.unsplash.com/photo-1625938145744-e380515399b7?w=800&q=80',
+      'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=800&q=80',
+    ],
     ingredients: addIng([
       { name: '猪排骨', quantity: 500, unit: '克' },
       { name: '冰糖', quantity: 30, unit: '克' },
@@ -149,6 +160,9 @@ export const mockRecipes: Recipe[] = [
     cook_count: 203,
     servings: 3,
     is_favorite: true,
+    images: [
+      'https://images.unsplash.com/photo-1547592180-85f173990554?w=800&q=80',
+    ],
     ingredients: addIng([
       { name: '紫菜', quantity: 10, unit: '克' },
       { name: '鸡蛋', quantity: 2, unit: '个' },
@@ -176,6 +190,10 @@ export const mockRecipes: Recipe[] = [
     cook_count: 156,
     servings: 2,
     is_favorite: false,
+    images: [
+      'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?w=800&q=80',
+      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80',
+    ],
     ingredients: addIng([
       { name: '西兰花', quantity: 300, unit: '克' },
       { name: '大蒜', quantity: 5, unit: '瓣' },
@@ -202,6 +220,10 @@ export const mockRecipes: Recipe[] = [
     cook_count: 64,
     servings: 6,
     is_favorite: true,
+    images: [
+      'https://images.unsplash.com/photo-1625398407796-82650a8c135f?w=800&q=80',
+      'https://images.unsplash.com/photo-1569058242252-623df4670c97?w=800&q=80',
+    ],
     ingredients: addIng([
       { name: '五花肉', quantity: 800, unit: '克' },
       { name: '冰糖', quantity: 50, unit: '克' },
@@ -229,6 +251,9 @@ export const mockRecipes: Recipe[] = [
     cook_count: 98,
     servings: 2,
     is_favorite: false,
+    images: [
+      'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&q=80',
+    ],
     ingredients: addIng([
       { name: '时令蔬菜', quantity: 400, unit: '克' },
       { name: '蒜末', quantity: 10, unit: '克' },
@@ -253,6 +278,9 @@ export const mockRecipes: Recipe[] = [
     cook_count: 312,
     servings: 3,
     is_favorite: false,
+    images: [
+      'https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=800&q=80',
+    ],
     ingredients: addIng([
       { name: '小米', quantity: 100, unit: '克' },
       { name: '清水', quantity: 1000, unit: '毫升' },
@@ -278,6 +306,11 @@ export const mockRecipes: Recipe[] = [
     cook_count: 77,
     servings: 2,
     is_favorite: true,
+    images: [
+      'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80',
+      'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=800&q=80',
+      'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&q=80',
+    ],
     ingredients: addIng([
       { name: '苹果', quantity: 1, unit: '个' },
       { name: '香蕉', quantity: 1, unit: '根' },

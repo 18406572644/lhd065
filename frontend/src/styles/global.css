@@ -218,13 +218,8 @@ body {
 }
 
 .recipe-card-image {
-  height: 160px;
-  background: linear-gradient(135deg, #DCEDC8 0%, #FFCCBC 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 64px;
   position: relative;
+  overflow: hidden;
 }
 
 .recipe-card-image .favorite-btn {

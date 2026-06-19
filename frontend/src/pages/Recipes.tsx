@@ -28,6 +28,8 @@ import {
 import { Recipe, RecipeForm, RecipeIngredient, RecipeStep } from '@/types';
 import { mockGetRecipes, mockRecipes } from '@/api/recipes';
 import { formatDuration, getCategoryIcon, getDifficultyText, getDifficultyColor } from '@/utils';
+import ImageUploader from '@/components/ImageUploader';
+import ImageCarousel from '@/components/ImageCarousel';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -73,6 +75,7 @@ const Recipes: React.FC = () => {
       ingredients: [{ name: '', quantity: 1, unit: '克' }],
       steps: [{ order: 1, description: '', duration_minutes: 5 }],
       nutrition: { calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0, sugar: 0 },
+      images: [],
     });
     setModalOpen(true);
   };
@@ -89,6 +92,7 @@ const Recipes: React.FC = () => {
       ingredients: recipe.ingredients.length > 0 ? recipe.ingredients : [{ name: '', quantity: 1, unit: '克' }],
       steps: recipe.steps.length > 0 ? recipe.steps : [{ order: 1, description: '', duration_minutes: 5 }],
       nutrition: recipe.nutrition,
+      images: recipe.images || [],
     });
     setModalOpen(true);
   };
@@ -107,6 +111,19 @@ const Recipes: React.FC = () => {
 
   const handleSubmit = async (values: RecipeForm) => {
     if (editingId) {
+      setRecipes((prev) =>
+        prev.map((r) =>
+          r.id === editingId
+            ? {
+                ...r,
+                ...values,
+                total_time: values.cook_time,
+                ingredients: values.ingredients.map((ing) => ({ ...ing, amount: ing.amount || ing.quantity })),
+                images: values.images || [],
+              }
+            : r
+        )
+      );
       message.success('食谱更新成功');
     } else {
       const newRecipe: Recipe = {
@@ -118,7 +135,8 @@ const Recipes: React.FC = () => {
         is_favorite: false,
         created_at: new Date().toISOString().split('T')[0],
         created_by: 1,
-        ingredients: values.ingredients.map(ing => ({ ...ing, amount: ing.amount || ing.quantity })),
+        ingredients: values.ingredients.map((ing) => ({ ...ing, amount: ing.amount || ing.quantity })),
+        images: values.images || [],
       };
       setRecipes((prev) => [newRecipe, ...prev]);
       message.success('食谱创建成功');
@@ -189,7 +207,11 @@ const Recipes: React.FC = () => {
               onClick={() => navigate(`/recipes/${recipe.id}`)}
             >
               <div className="recipe-card-image">
-                <span>{getCategoryIcon(recipe.category)}</span>
+                <ImageCarousel
+                  images={recipe.images || []}
+                  fallbackIcon={<span style={{ fontSize: 48 }}>{getCategoryIcon(recipe.category)}</span>}
+                  height={180}
+                />
                 <Button
                   className="favorite-btn"
                   type="text"
@@ -323,6 +345,13 @@ const Recipes: React.FC = () => {
             rules={[{ required: true, message: '请输入描述' }]}
           >
             <TextArea rows={2} placeholder="简短描述这道菜的特点" />
+          </Form.Item>
+
+          <Form.Item
+            label="食谱图片"
+            name="images"
+          >
+            <ImageUploader maxCount={9} />
           </Form.Item>
 
           <Row gutter={16}>

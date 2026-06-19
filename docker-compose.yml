@@ -1,0 +1,45 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fresh-kitchen-backend
+    restart: unless-stopped
+    ports:
+      - "6065:6065"
+    volumes:
+      - backend-uploads:/app/uploads
+    networks:
+      - fresh-kitchen-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fresh-kitchen-frontend
+    restart: unless-stopped
+    ports:
+      - "2065:2065"
+    depends_on:
+      - backend
+    networks:
+      - fresh-kitchen-network
+
+  # 如果将来需要添加服务端，取消下面的注释并配置相应的 Dockerfile
+  # server:
+  #   build:
+  #     context: ./server
+  #     dockerfile: Dockerfile
+  #   container_name: fresh-kitchen-server
+  #   restart: unless-stopped
+  #   ports:
+  #     - "4065:4065"
+  #   networks:
+  #     - fresh-kitchen-network
+
+volumes:
+  backend-uploads:
+
+networks:
+  fresh-kitchen-network:
+    driver: bridge

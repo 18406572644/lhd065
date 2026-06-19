@@ -34,6 +34,7 @@ import { getFavoriteRecipes, toggleFavorite } from '../api/recipes';
 import { getDifficultyText, getDifficultyColor, getCategoryIcon } from '../utils';
 import { COLORS, CATEGORY_COLORS } from '../styles/theme';
 import NutritionCard from '../components/NutritionCard';
+import ImageCarousel from '../components/ImageCarousel';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -209,18 +210,16 @@ const Favorites: React.FC = () => {
                   <div
                     style={{
                       height: 160,
-                      background: `linear-gradient(135deg, ${
-                        CATEGORY_COLORS[recipe.category as keyof typeof CATEGORY_COLORS] ||
-                        COLORS.primary
-                      }30 0%, ${COLORS.background} 100%)`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 72,
                       position: 'relative',
                     }}
                   >
-                    {getCategoryIcon(recipe.category)}
+                    <ImageCarousel
+                      images={recipe.images || []}
+                      fallbackIcon={
+                        <span style={{ fontSize: 72 }}>{getCategoryIcon(recipe.category)}</span>
+                      }
+                      height={160}
+                    />
                     <Tooltip title="取消收藏">
                       <Button
                         type="text"
@@ -388,20 +387,18 @@ const Favorites: React.FC = () => {
           <div>
             <div
               style={{
-                height: 200,
-                background: `linear-gradient(135deg, ${
-                  CATEGORY_COLORS[detailModal.category as keyof typeof CATEGORY_COLORS] ||
-                  COLORS.primary
-                }30 0%, ${COLORS.background} 100%)`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 96,
                 borderRadius: 16,
                 marginBottom: 20,
+                overflow: 'hidden',
               }}
             >
-              {getCategoryIcon(detailModal.category)}
+              <ImageCarousel
+                images={detailModal.images || []}
+                fallbackIcon={
+                  <span style={{ fontSize: 96 }}>{getCategoryIcon(detailModal.category)}</span>
+                }
+                height={200}
+              />
             </div>
 
             <Descriptions
