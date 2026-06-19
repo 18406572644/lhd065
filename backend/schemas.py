@@ -356,3 +356,68 @@ class UploadResponse(BaseModel):
     filename: str
     url: str
     path: str
+
+
+class MealPlanBase(BaseModel):
+    recipe_id: int
+    meal_type: str
+    plan_date: date
+    servings: int = 2
+    notes: str = ""
+
+
+class MealPlanCreate(MealPlanBase):
+    pass
+
+
+class MealPlanUpdate(BaseModel):
+    recipe_id: Optional[int] = None
+    meal_type: Optional[str] = None
+    plan_date: Optional[date] = None
+    servings: Optional[int] = None
+    notes: Optional[str] = None
+    is_completed: Optional[bool] = None
+
+
+class MealPlanResponse(MealPlanBase):
+    id: int
+    user_id: int
+    family_id: Optional[int]
+    is_completed: bool
+    completed_at: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+    recipe: Optional[RecipeResponse] = None
+
+    class Config:
+        from_attributes = True
+
+
+class MealPlanShoppingItem(BaseModel):
+    ingredient_id: int
+    ingredient_name: str
+    quantity: float
+    unit: str
+    category: str
+    source_recipes: List[str] = []
+
+
+class MealPlanShoppingResponse(BaseModel):
+    items: List[MealPlanShoppingItem]
+    total_items: int
+    start_date: date
+    end_date: str
+
+
+class MealPlanRecommendRequest(BaseModel):
+    meal_type: str = "dinner"
+    days: int = 7
+    tags: Optional[List[str]] = None
+    categories: Optional[List[str]] = None
+    max_calories: Optional[float] = None
+    min_protein: Optional[float] = None
+
+
+class MealPlanRecommendResponse(BaseModel):
+    recommendations: List[MealPlanResponse]
+    message: str

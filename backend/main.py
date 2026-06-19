@@ -17,6 +17,8 @@ from routers import recipes as recipes_router
 from routers import shopping as shopping_router
 from routers import stats as stats_router
 from routers import upload as upload_router
+from routers import family as family_router
+from routers import meal_plans as meal_plans_router
 
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
@@ -252,6 +254,8 @@ app.include_router(recipes_router.router, prefix="/api/recipes", tags=["食谱"]
 app.include_router(shopping_router.router, prefix="/api/shopping", tags=["购物清单"])
 app.include_router(stats_router.router, prefix="/api/stats", tags=["统计"])
 app.include_router(upload_router.router, prefix="/api/upload", tags=["上传"])
+app.include_router(family_router.router, prefix="/api/family", tags=["家庭"])
+app.include_router(meal_plans_router.router, prefix="/api/meal-plans", tags=["用餐计划"])
 
 
 @app.get("/")

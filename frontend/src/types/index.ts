@@ -144,3 +144,59 @@ export interface TopRecipe {
   name: string;
   cook_count: number;
 }
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export interface MealPlan {
+  id: number;
+  recipe_id: number;
+  meal_type: MealType;
+  plan_date: string;
+  servings: number;
+  notes: string;
+  is_completed: boolean;
+  completed_at?: string;
+  created_at: string;
+  updated_at: string;
+  user_id: number;
+  family_id?: number;
+  recipe?: Recipe;
+}
+
+export interface MealPlanForm {
+  recipe_id: number;
+  meal_type: MealType;
+  plan_date: string;
+  servings: number;
+  notes?: string;
+}
+
+export interface MealPlanShoppingItem {
+  ingredient_id: number;
+  ingredient_name: string;
+  quantity: number;
+  unit: string;
+  category: string;
+  source_recipes: string[];
+}
+
+export interface MealPlanShoppingResponse {
+  items: MealPlanShoppingItem[];
+  total_items: number;
+  start_date: string;
+  end_date: string;
+}
+
+export interface MealPlanRecommendRequest {
+  meal_type: MealType;
+  days: number;
+  tags?: string[];
+  categories?: string[];
+  max_calories?: number;
+  min_protein?: number;
+}
+
+export interface MealPlanRecommendResponse {
+  recommendations: MealPlan[];
+  message: string;
+}

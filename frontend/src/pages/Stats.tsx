@@ -51,10 +51,10 @@ const Stats: React.FC = () => {
           getTopRecipes(),
           getCookingStats(),
         ]);
-        setWeeklyNutrition(nutrition.status === 'fulfilled' ? (nutrition.value as DailyNutrition[]) : []);
-        setCategoryDistribution(cat.status === 'fulfilled' ? (cat.value as CategoryStat[]) : []);
-        setTopRecipes(top.status === 'fulfilled' ? (top.value as TopRecipe[]) : []);
-        setCookingStats(stats.status === 'fulfilled' ? (stats.value as any) : null);
+        setWeeklyNutrition(nutrition.status === 'fulfilled' ? nutrition.value : []);
+        setCategoryDistribution(cat.status === 'fulfilled' ? cat.value : []);
+        setTopRecipes(top.status === 'fulfilled' ? top.value : []);
+        setCookingStats(stats.status === 'fulfilled' ? stats.value : null);
       } finally {
         setLoading(false);
       }

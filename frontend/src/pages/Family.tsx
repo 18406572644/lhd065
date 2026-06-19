@@ -54,7 +54,7 @@ const Family: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = (await getFamilyMembers()) as FamilyMember[];
+      const data = await getFamilyMembers();
       setMembers(data);
     } finally {
       setLoading(false);

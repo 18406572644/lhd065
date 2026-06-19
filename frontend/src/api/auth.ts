@@ -10,7 +10,7 @@ export interface AuthResult {
 
 export const login = async (username: string, password: string): Promise<AuthResult> => {
   try {
-    const res = await request.post<any, { access_token: string; token_type: string }>(
+    const res = await request.post<{ access_token: string; token_type: string }>(
       '/auth/login/json',
       { username, password }
     );
@@ -30,7 +30,7 @@ export const login = async (username: string, password: string): Promise<AuthRes
 
 export const register = async (formData: RegisterForm): Promise<AuthResult> => {
   try {
-    const res = await request.post<any, { access_token: string; token_type: string }>(
+    const res = await request.post<{ access_token: string; token_type: string }>(
       '/auth/register',
       {
         username: formData.username,
@@ -54,7 +54,7 @@ export const register = async (formData: RegisterForm): Promise<AuthResult> => {
 
 export const fetchCurrentUser = async (): Promise<User | null> => {
   try {
-    const res = await request.get<any, any>('/auth/me');
+    const res = await request.get<any>('/auth/me');
     return {
       id: res.id,
       username: res.username,

@@ -49,7 +49,7 @@ const ShoppingList: React.FC = () => {
     setLoading(true);
     try {
       const data = await getShoppingList();
-      setItems(data as ShoppingItem[]);
+      setItems(data);
       const recData = await getRecipes();
       setRecipes(recData);
     } finally {

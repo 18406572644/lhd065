@@ -15,6 +15,7 @@ class Family(Base):
     inventories = relationship("Inventory", back_populates="family")
     recipes = relationship("Recipe", back_populates="family")
     shopping_lists = relationship("ShoppingList", back_populates="family")
+    meal_plans = relationship("MealPlan", back_populates="family")
 
 
 class User(Base):
@@ -35,6 +36,7 @@ class User(Base):
     shopping_lists = relationship("ShoppingList", back_populates="user")
     favorites = relationship("Favorite", back_populates="user")
     notifications = relationship("Notification", back_populates="user")
+    meal_plans = relationship("MealPlan", back_populates="user")
 
 
 class Ingredient(Base):
@@ -99,6 +101,7 @@ class Recipe(Base):
     steps = relationship("RecipeStep", back_populates="recipe", cascade="all, delete-orphan")
     ingredients = relationship("RecipeIngredient", back_populates="recipe", cascade="all, delete-orphan")
     favorites = relationship("Favorite", back_populates="recipe", cascade="all, delete-orphan")
+    meal_plans = relationship("MealPlan", back_populates="recipe", cascade="all, delete-orphan")
 
 
 class RecipeStep(Base):
@@ -167,3 +170,24 @@ class Notification(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="notifications")
+
+
+class MealPlan(Base):
+    __tablename__ = "meal_plans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    family_id = Column(Integer, ForeignKey("families.id"), nullable=True)
+    recipe_id = Column(Integer, ForeignKey("recipes.id"), nullable=False)
+    meal_type = Column(String(20), nullable=False)
+    plan_date = Column(Date, nullable=False)
+    is_completed = Column(Boolean, default=False)
+    completed_at = Column(DateTime, nullable=True)
+    servings = Column(Integer, default=2)
+    notes = Column(Text, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="meal_plans")
+    family = relationship("Family", back_populates="meal_plans")
+    recipe = relationship("Recipe", back_populates="meal_plans")

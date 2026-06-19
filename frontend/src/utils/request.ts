@@ -1,13 +1,12 @@
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, Method } from 'axios';
 import { message } from 'antd';
-import { useNavigate } from 'react-router-dom';
 
-const request = axios.create({
+const instance: AxiosInstance = axios.create({
   baseURL: '/api',
   timeout: 10000,
 });
 
-request.interceptors.request.use(
+instance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -20,7 +19,7 @@ request.interceptors.request.use(
   }
 );
 
-request.interceptors.response.use(
+instance.interceptors.response.use(
   (response) => {
     return response.data;
   },
@@ -51,5 +50,19 @@ request.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+interface TypedAxios {
+  <T = any>(config: AxiosRequestConfig): Promise<T>;
+  <T = any, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<T>;
+  get<T = any, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<T>;
+  post<T = any, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<T>;
+  put<T = any, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<T>;
+  delete<T = any, D = any>(url: string, config?: AxiosRequestConfig<D>): Promise<T>;
+  patch<T = any, D = any>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<T>;
+  interceptors: typeof instance.interceptors;
+  defaults: typeof instance.defaults;
+}
+
+const request = instance as unknown as TypedAxios;
 
 export default request;

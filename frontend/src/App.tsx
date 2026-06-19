@@ -26,6 +26,7 @@ import {
   BellOutlined,
   HomeOutlined,
   PlusOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons';
 import {
   Routes,
@@ -42,6 +43,7 @@ import ShoppingList from './pages/ShoppingList';
 import Stats from './pages/Stats';
 import Family from './pages/Family';
 import Favorites from './pages/Favorites';
+import MealPlan from './pages/MealPlan';
 import Login from './pages/Login';
 import { logout, getCurrentUser } from './api/auth';
 import { getExpiringItems } from './api/inventory';
@@ -140,6 +142,11 @@ const App: React.FC = () => {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: '仪表盘',
+    },
+    {
+      key: '/meal-plan',
+      icon: <CalendarOutlined />,
+      label: '用餐计划',
     },
     {
       key: '/recipes',
@@ -550,6 +557,14 @@ const App: React.FC = () => {
               }
             />
             <Route
+              path="/meal-plan"
+              element={
+                <PrivateRoute>
+                  <MealPlan />
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/recipes"
               element={
                 <PrivateRoute>
@@ -616,6 +631,7 @@ const App: React.FC = () => {
 const BreadcrumbTitle: React.FC<{ pathname: string }> = ({ pathname }) => {
   const getTitle = () => {
     if (pathname === '/dashboard') return { title: '仪表盘', desc: '今日美食概览' };
+    if (pathname === '/meal-plan') return { title: '用餐计划', desc: '轻松规划一周饮食' };
     if (pathname === '/recipes') return { title: '食谱管理', desc: '浏览与创建食谱' };
     if (pathname.startsWith('/recipes/')) return { title: '食谱详情', desc: '烹饪步骤与营养' };
     if (pathname === '/inventory') return { title: '食材库存', desc: '管理你的食材仓库' };

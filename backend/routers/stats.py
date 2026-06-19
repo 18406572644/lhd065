@@ -338,3 +338,156 @@ async def get_notification_summary(
         "read": total - unread,
         "by_type": by_type
     }
+
+
+@router.get("/weekly-nutrition")
+async def get_weekly_nutrition(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    today = date.today()
+    week_start = today - timedelta(days=today.weekday())
+
+    family_condition = or_(
+        Inventory.family_id == current_user.family_id,
+        Inventory.user_id == current_user.id
+    ) if current_user.family_id else (Inventory.user_id == current_user.id)
+
+    daily = []
+    for i in range(7):
+        d = week_start + timedelta(days=i)
+        day_start = datetime.combine(d, datetime.min.time())
+        day_end = datetime.combine(d, datetime.max.time())
+
+        inv_query = select(Inventory).where(
+            and_(
+                family_condition,
+                Inventory.created_at >= day_start,
+                Inventory.created_at <= day_end
+            )
+        ).options(selectinload(Inventory.ingredient))
+        inv_result = await db.execute(inv_query)
+        day_inventories = inv_result.scalars().all()
+
+        day_calories = 0.0
+        day_protein = 0.0
+        day_carbs = 0.0
+        day_fat = 0.0
+
+        for inv in day_inventories:
+            if inv.ingredient:
+                qty = inv.quantity
+                day_calories += inv.ingredient.nutrition_calories * qty / 100
+                day_protein += inv.ingredient.nutrition_protein * qty / 100
+                day_carbs += inv.ingredient.nutrition_carbs * qty / 100
+                day_fat += inv.ingredient.nutrition_fat * qty / 100
+
+        daily.append({
+            "date": d.isoformat(),
+            "calories": round(day_calories, 2),
+            "protein": round(day_protein, 2),
+            "carbs": round(day_carbs, 2),
+            "fat": round(day_fat, 2)
+        })
+
+    return daily
+
+
+@router.get("/category-distribution")
+async def get_category_distribution(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    family_condition = or_(
+        Inventory.family_id == current_user.family_id,
+        Inventory.user_id == current_user.id
+    ) if current_user.family_id else (Inventory.user_id == current_user.id)
+
+    query = select(
+        Ingredient.category,
+        func.count(Inventory.id)
+    ).join(
+        Inventory, Inventory.ingredient_id == Ingredient.id
+    ).where(
+        and_(family_condition, Inventory.quantity > 0)
+    ).group_by(Ingredient.category)
+    result = await db.execute(query)
+    rows = result.fetchall()
+
+    categories = []
+    for row in rows:
+        categories.append({
+            "name": row[0] or "其他",
+            "value": row[1] or 0
+        })
+
+    return categories
+
+
+@router.get("/top-recipes")
+async def get_top_recipes_api(
+    limit: int = 5,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    query = select(Recipe).where(
+        or_(
+            Recipe.is_public == True,
+            Recipe.user_id == current_user.id,
+            (Recipe.family_id == current_user.family_id) if current_user.family_id else False
+        )
+    ).order_by(
+        (Recipe.views + Recipe.likes * 3).desc()
+    ).limit(limit)
+
+    result = await db.execute(query)
+    recipes = result.scalars().all()
+
+    top = []
+    for r in recipes:
+        top.append({
+            "id": r.id,
+            "name": r.title,
+            "cook_count": r.views or 0
+        })
+
+    return top
+
+
+@router.get("/cooking")
+async def get_cooking_stats_api(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    recipe_query = select(func.count(Recipe.id)).where(
+        or_(
+            Recipe.user_id == current_user.id,
+            (Recipe.family_id == current_user.family_id) if current_user.family_id else False
+        )
+    )
+    recipe_result = await db.execute(recipe_query)
+    total_recipes = recipe_result.scalar_one() or 0
+
+    views_query = select(func.sum(Recipe.views)).where(
+        or_(
+            Recipe.user_id == current_user.id,
+            (Recipe.family_id == current_user.family_id) if current_user.family_id else False
+        )
+    )
+    views_result = await db.execute(views_query)
+    total_cooks = views_result.scalar_one() or 0
+
+    cook_time_query = select(func.sum(Recipe.cook_time)).where(
+        or_(
+            Recipe.user_id == current_user.id,
+            (Recipe.family_id == current_user.family_id) if current_user.family_id else False
+        )
+    )
+    cook_time_result = await db.execute(cook_time_query)
+    total_cook_time = cook_time_result.scalar_one() or 0
+
+    return {
+        "total_cooks": int(total_cooks),
+        "total_recipes": int(total_recipes),
+        "total_cook_time": int(total_cook_time)
+    }
