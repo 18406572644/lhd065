@@ -1,0 +1,133 @@
+import { ThemeConfig } from 'antd';
+
+export const themeConfig: ThemeConfig = {
+  token: {
+    colorPrimary: '#8BC34A',
+    colorLink: '#8BC34A',
+    colorSuccess: '#66BB6A',
+    colorWarning: '#FF8A65',
+    colorError: '#EF5350',
+    colorInfo: '#4FC3F7',
+    colorBgLayout: '#FFFDF8',
+    colorBgContainer: '#FFFFFF',
+    colorBgElevated: '#FFFFFF',
+    colorBorder: '#E8E4D8',
+    colorBorderSecondary: '#F5F0E6',
+    borderRadius: 12,
+    borderRadiusLG: 16,
+    borderRadiusSM: 8,
+    boxShadowTertiary: '0 2px 12px rgba(139, 195, 74, 0.08)',
+    colorText: '#4A4A4A',
+    colorTextSecondary: '#7A7A7A',
+    colorTextTertiary: '#A0A0A0',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif',
+    fontSize: 14,
+    controlHeight: 40,
+    controlHeightLG: 48,
+    controlHeightSM: 32,
+  },
+  components: {
+    Layout: {
+      headerBg: '#FFFFFF',
+      siderBg: '#FFFBF2',
+      bodyBg: '#FFFDF8',
+      headerHeight: 64,
+      triggerBg: '#FFFDF8',
+      headerPadding: '0 24px',
+    },
+    Menu: {
+      itemBg: 'transparent',
+      itemSelectedBg: 'rgba(139, 195, 74, 0.12)',
+      itemSelectedColor: '#689F38',
+      itemHoverBg: 'rgba(139, 195, 74, 0.06)',
+      itemHoverColor: '#8BC34A',
+      itemColor: '#5A5A5A',
+      subMenuItemBg: 'transparent',
+      darkItemBg: '#FFFBF2',
+      darkSubMenuItemBg: '#FFFDF8',
+    },
+    Button: {
+      colorPrimary: '#8BC34A',
+      colorPrimaryHover: '#9CCC65',
+      colorPrimaryActive: '#7CB342',
+      algorithm: true,
+      defaultBg: '#FFFFFF',
+      defaultBorderColor: '#D7CCC8',
+    },
+    Card: {
+      colorBorderSecondary: '#F0EBE0',
+      boxShadowTertiary: '0 4px 16px rgba(139, 195, 74, 0.06)',
+    },
+    Table: {
+      headerBg: 'rgba(139, 195, 74, 0.06)',
+      headerColor: '#5A5A5A',
+      rowHoverBg: 'rgba(139, 195, 74, 0.04)',
+      borderColor: '#F0EBE0',
+    },
+    Input: {
+      hoverBorderColor: '#8BC34A',
+      activeBorderColor: '#689F38',
+      colorBorder: '#D7CCC8',
+    },
+    Select: {
+      colorBorder: '#D7CCC8',
+      hoverBorderColor: '#8BC34A',
+      activeBorderColor: '#689F38',
+    },
+    Form: {
+      labelColor: '#5A5A5A',
+    },
+    Badge: {
+      colorWarning: '#FF8A65',
+    },
+    Tag: {
+      defaultBg: 'rgba(139, 195, 74, 0.12)',
+      defaultColor: '#689F38',
+    },
+    Steps: {
+      colorPrimary: '#8BC34A',
+      colorSplit: '#E8E4D8',
+    },
+    Modal: {
+      titleColor: '#4A4A4A',
+    },
+    Drawer: {
+      colorBgElevated: '#FFFDF8',
+    },
+  },
+};
+
+export const COLORS = {
+  primary: '#8BC34A',
+  primaryLight: '#DCEDC8',
+  primaryDark: '#689F38',
+  warning: '#FF8A65',
+  warningLight: '#FFCCBC',
+  warningDark: '#FF5722',
+  background: '#FFFDF8',
+  backgroundAlt: '#FFFBF2',
+  border: '#E8E4D8',
+  text: '#4A4A4A',
+  textLight: '#7A7A7A',
+  success: '#66BB6A',
+  error: '#EF5350',
+  info: '#4FC3F7',
+  purple: '#BA68C8',
+  pink: '#F48FB1',
+  cyan: '#4DD0E1',
+  amber: '#FFD54F',
+  teal: '#4DB6AC',
+};
+
+export const CATEGORY_COLORS: Record<string, string> = {
+  '蔬菜': '#8BC34A',
+  '水果': '#FF8A65',
+  '肉类': '#EF5350',
+  '海鲜': '#4FC3F7',
+  '奶制品': '#BA68C8',
+  '主食': '#FFD54F',
+  '调料': '#9E9E9E',
+  '零食': '#F48FB1',
+  '饮品': '#4DD0E1',
+  '其他': '#90A4AE',
+};
