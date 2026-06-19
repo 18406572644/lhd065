@@ -27,6 +27,7 @@ import {
   HomeOutlined,
   PlusOutlined,
   CalendarOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import {
   Routes,
@@ -45,6 +46,8 @@ import Family from './pages/Family';
 import Favorites from './pages/Favorites';
 import MealPlan from './pages/MealPlan';
 import Login from './pages/Login';
+import IngredientsEncyclopedia from './pages/IngredientsEncyclopedia';
+import IngredientDetail from './pages/IngredientDetail';
 import { logout, getCurrentUser } from './api/auth';
 import { getExpiringItems } from './api/inventory';
 import { COLORS } from './styles/theme';
@@ -154,6 +157,11 @@ const App: React.FC = () => {
       label: '食谱管理',
     },
     {
+      key: '/ingredients',
+      icon: <AppstoreOutlined />,
+      label: '食材百科',
+    },
+    {
       key: '/inventory',
       icon: <InboxOutlined />,
       label: '食材库存',
@@ -183,6 +191,7 @@ const App: React.FC = () => {
   const selectedKey = () => {
     const path = location.pathname;
     if (path.startsWith('/recipes/')) return '/recipes';
+    if (path.startsWith('/ingredients/')) return '/ingredients';
     return path;
   };
 
@@ -581,6 +590,22 @@ const App: React.FC = () => {
               }
             />
             <Route
+              path="/ingredients"
+              element={
+                <PrivateRoute>
+                  <IngredientsEncyclopedia />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/ingredients/:id"
+              element={
+                <PrivateRoute>
+                  <IngredientDetail />
+                </PrivateRoute>
+              }
+            />
+            <Route
               path="/inventory"
               element={
                 <PrivateRoute>
@@ -634,6 +659,8 @@ const BreadcrumbTitle: React.FC<{ pathname: string }> = ({ pathname }) => {
     if (pathname === '/meal-plan') return { title: '用餐计划', desc: '轻松规划一周饮食' };
     if (pathname === '/recipes') return { title: '食谱管理', desc: '浏览与创建食谱' };
     if (pathname.startsWith('/recipes/')) return { title: '食谱详情', desc: '烹饪步骤与营养' };
+    if (pathname === '/ingredients') return { title: '食材百科', desc: '探索食材的奥秘' };
+    if (pathname.startsWith('/ingredients/')) return { title: '食材详情', desc: '营养与选购指南' };
     if (pathname === '/inventory') return { title: '食材库存', desc: '管理你的食材仓库' };
     if (pathname === '/shopping') return { title: '购物清单', desc: '轻松采购不遗漏' };
     if (pathname === '/stats') return { title: '饮食统计', desc: '可视化营养分析' };

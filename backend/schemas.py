@@ -517,3 +517,84 @@ class ImportPreviewResponse(BaseModel):
     sample_data: List[dict]
     columns: List[str]
     validation_errors: List[RecipeImportError] = []
+
+
+class IngredientEncyclopediaBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    category: str = "其他"
+    aliases: str = ""
+    season: str = "四季"
+    image: str = ""
+    description: str = ""
+    nutrition_calories: float = 0.0
+    nutrition_protein: float = 0.0
+    nutrition_carbs: float = 0.0
+    nutrition_fat: float = 0.0
+    nutrition_fiber: float = 0.0
+    nutrition_sugar: float = 0.0
+    nutrition_vitamin_c: float = 0.0
+    nutrition_calcium: float = 0.0
+    nutrition_iron: float = 0.0
+    selection_tips: str = ""
+    storage_method: str = ""
+    cleaning_tips: str = ""
+    common_pairings: str = ""
+    food_conflicts: str = ""
+    cooking_tips: str = ""
+
+
+class IngredientEncyclopediaCreate(IngredientEncyclopediaBase):
+    pass
+
+
+class IngredientEncyclopediaUpdate(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
+    aliases: Optional[str] = None
+    season: Optional[str] = None
+    image: Optional[str] = None
+    description: Optional[str] = None
+    nutrition_calories: Optional[float] = None
+    nutrition_protein: Optional[float] = None
+    nutrition_carbs: Optional[float] = None
+    nutrition_fat: Optional[float] = None
+    nutrition_fiber: Optional[float] = None
+    nutrition_sugar: Optional[float] = None
+    nutrition_vitamin_c: Optional[float] = None
+    nutrition_calcium: Optional[float] = None
+    nutrition_iron: Optional[float] = None
+    selection_tips: Optional[str] = None
+    storage_method: Optional[str] = None
+    cleaning_tips: Optional[str] = None
+    common_pairings: Optional[str] = None
+    food_conflicts: Optional[str] = None
+    cooking_tips: Optional[str] = None
+
+
+class IngredientEncyclopediaResponse(IngredientEncyclopediaBase):
+    id: int
+    created_at: datetime
+    is_favorite: Optional[bool] = False
+
+    class Config:
+        from_attributes = True
+
+
+class IngredientFavoriteResponse(BaseModel):
+    id: int
+    ingredient_id: int
+    user_id: int
+    created_at: datetime
+    ingredient: Optional[IngredientEncyclopediaResponse] = None
+
+    class Config:
+        from_attributes = True
+
+
+class SeasonIngredientResponse(BaseModel):
+    season: str
+    ingredients: List[IngredientEncyclopediaResponse] = []
+
+
+class IngredientCompareResponse(BaseModel):
+    ingredients: List[IngredientEncyclopediaResponse] = []

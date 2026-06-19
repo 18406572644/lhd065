@@ -212,3 +212,45 @@ class MealPlan(Base):
     user = relationship("User", back_populates="meal_plans")
     family = relationship("Family", back_populates="meal_plans")
     recipe = relationship("Recipe", back_populates="meal_plans")
+
+
+class IngredientEncyclopedia(Base):
+    __tablename__ = "ingredient_encyclopedia"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False, index=True)
+    category = Column(String(50), default="其他")
+    aliases = Column(String(255), default="")
+    season = Column(String(50), default="四季")
+    image = Column(String(255), default="")
+    description = Column(Text, default="")
+    nutrition_calories = Column(Float, default=0.0)
+    nutrition_protein = Column(Float, default=0.0)
+    nutrition_carbs = Column(Float, default=0.0)
+    nutrition_fat = Column(Float, default=0.0)
+    nutrition_fiber = Column(Float, default=0.0)
+    nutrition_sugar = Column(Float, default=0.0)
+    nutrition_vitamin_c = Column(Float, default=0.0)
+    nutrition_calcium = Column(Float, default=0.0)
+    nutrition_iron = Column(Float, default=0.0)
+    selection_tips = Column(Text, default="")
+    storage_method = Column(Text, default="")
+    cleaning_tips = Column(Text, default="")
+    common_pairings = Column(Text, default="")
+    food_conflicts = Column(Text, default="")
+    cooking_tips = Column(Text, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    favorites = relationship("IngredientFavorite", back_populates="ingredient")
+
+
+class IngredientFavorite(Base):
+    __tablename__ = "ingredient_favorites"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ingredient_id = Column(Integer, ForeignKey("ingredient_encyclopedia.id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    ingredient = relationship("IngredientEncyclopedia", back_populates="favorites")
+    user = relationship("User")

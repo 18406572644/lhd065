@@ -16,6 +16,7 @@ import {
   Col,
   Statistic,
   Card,
+  Tooltip,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -28,10 +29,13 @@ import {
   WarningOutlined,
   ShoppingOutlined,
   CalendarOutlined,
+  BookOutlined,
 } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { InventoryItem, InventoryForm } from '@/types';
 import { getInventory } from '@/api/inventory';
+import { getEncyclopediaByName } from '@/api/ingredientEncyclopedia';
 import { getRowClassName, formatDate } from '@/utils';
 import ExpireBadge from '@/components/ExpireBadge';
 import { CATEGORY_COLORS } from '@/styles/theme';
@@ -44,6 +48,7 @@ const STORAGE_LOCATIONS = ['冰箱冷藏', '冰箱冷冻', '储物柜', '厨房�
 const UNITS = ['克', '毫升', '个', '袋', '盒', '瓶', '根', '颗', '瓣', '勺'];
 
 const Inventory: React.FC = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState('');
@@ -94,6 +99,20 @@ const Inventory: React.FC = () => {
   const handleDelete = (id: number) => {
     setData((prev) => prev.filter((i) => i.id !== id));
     message.success('删除成功');
+  };
+
+  const handleViewEncyclopedia = async (name: string) => {
+    try {
+      const result = await getEncyclopediaByName(name);
+      if (result) {
+        navigate(`/ingredients/${result.id}`);
+      } else {
+        message.info('该食材暂无百科详情');
+        navigate('/ingredients');
+      }
+    } catch {
+      navigate('/ingredients');
+    }
   };
 
   const handleSubmit = (values: InventoryForm) => {
@@ -152,7 +171,7 @@ const Inventory: React.FC = () => {
       title: '名称',
       dataIndex: 'name',
       key: 'name',
-      width: 140,
+      width: 180,
       render: (text, record) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div
@@ -163,7 +182,21 @@ const Inventory: React.FC = () => {
               background: CATEGORY_COLORS[record.category] || '#9E9E9E',
             }}
           />
-          <span style={{ fontWeight: 500 }}>{text}</span>
+          <span
+            style={{ fontWeight: 500, cursor: 'pointer', color: '#2D3436' }}
+            onClick={() => handleViewEncyclopedia(text)}
+          >
+            {text}
+          </span>
+          <Tooltip title="查看百科">
+            <Button
+              type="text"
+              size="small"
+              icon={<BookOutlined />}
+              style={{ color: '#8BC34A', padding: '0 4px' }}
+              onClick={() => handleViewEncyclopedia(text)}
+            />
+          </Tooltip>
         </div>
       ),
     },

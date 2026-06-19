@@ -286,3 +286,44 @@ export interface CookingCalendarData {
   month: number;
   days: CookingCalendarDay[];
 }
+
+export interface IngredientEncyclopedia {
+  id: number;
+  name: string;
+  category: string;
+  aliases: string;
+  season: string;
+  image: string;
+  description: string;
+  nutrition_calories: number;
+  nutrition_protein: number;
+  nutrition_carbs: number;
+  nutrition_fat: number;
+  nutrition_fiber: number;
+  nutrition_sugar: number;
+  nutrition_vitamin_c: number;
+  nutrition_calcium: number;
+  nutrition_iron: number;
+  selection_tips: string;
+  storage_method: string;
+  cleaning_tips: string;
+  common_pairings: string;
+  food_conflicts: string;
+  cooking_tips: string;
+  created_at: string;
+  is_favorite: boolean;
+}
+
+export interface IngredientPairing {
+  name: string;
+  description: string;
+}
+
+export interface SeasonIngredients {
+  season: string;
+  ingredients: IngredientEncyclopedia[];
+}
+
+export interface IngredientCompareResult {
+  ingredients: IngredientEncyclopedia[];
+}
